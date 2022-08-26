@@ -4,6 +4,11 @@ export function isPromise(value: any) {
   return Boolean(value && typeof value.then === "function");
 }
 
+export type Mod = `${string}-${string}`;
+export function getNftMod(nft: Media): Mod {
+  return `${nft.collection.contractAddress}-${nft.tokenId}`;
+}
+
 export interface Collection extends CollectionInfoResponse {
   name: string;
   symbol: string;

@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useWallet } from "client";
 import { queryInventory } from "client/query";
-import { Header } from "components";
-import { Media } from "util/types";
+import { Header, MediaView } from "components";
+import { Media, Mod, getNftMod } from "util/types";
 import { useRouter } from "next/router";
 import { classNames } from "util/css";
-
-type Mod = `${string}-${string}`;
-function getNftMod(nft: Media): Mod {
-  return `${nft.collection.contractAddress}-${nft.tokenId}`;
-}
 
 const Inventory = () => {
   const { wallet } = useWallet();
@@ -86,21 +81,11 @@ const Inventory = () => {
       ) : (
         <div className="grid grid-cols-5 gap-4">
           {nfts?.map((nft) => (
-            <a
+            <MediaView
+              nft={nft}
               onClick={() => selectNft(nft)}
-              className={classNames(
-                selectedNfts.has(getNftMod(nft))
-                  ? "ring ring-primary"
-                  : "hover:shadow-sm hover:bg-firefly-800",
-                "px-5 py-4 border rounded-lg border-white/10 cursor-pointer"
-              )}
-            >
-              <img src={nft.image} className="rounded-md" />
-              <div className="mt-2.5">
-                <p className="text-lg font-semibold text-white">{nft.name}</p>
-                <p className="text-white/75">{nft.collection.name}</p>
-              </div>
-            </a>
+              selected={selectedNfts.has(getNftMod(nft))}
+            />
           ))}
         </div>
       )}
