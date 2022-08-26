@@ -1,86 +1,110 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
+import type { NextPage } from "next";
+import Head from "next/head";
+import Image from "next/image";
+import stargazeClient from "client/OfflineStargazeClient";
+import { useStargazeClient, useWallet } from "client";
+import { useEffect } from "react";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
+import { toUtf8 } from "@cosmjs/encoding/build/utf8";
+import { CONTRACT_ADDRESS } from "util/constants";
+import { coins } from "@cosmjs/amino";
+
+const fee = {
+  amount: coins(0, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
+  gas: process.env.NEXT_PUBLIC_DEFAULT_GAS_FEE!,
+};
 
 const Home: NextPage = () => {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+  const { connect, disconnect, wallet } = useWallet();
+  const { client } = useStargazeClient();
 
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
+  async function handleSendTestOffer() {
+    const msgs = [
+      {
+        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+        value: MsgExecuteContract.fromPartial({
+          sender: wallet?.address,
+          contract:
+            "stars19hzqtwn7hkw655q84kcsry6f3rzg8gfnk38e23dkjdjurt9ctzqqn38yhu",
+          msg: toUtf8(
+            JSON.stringify({
+              approve: {
+                spender: CONTRACT_ADDRESS,
+                token_id: "94",
+              },
+            })
+          ),
+          funds: [],
+        }),
+      },
+      {
+        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+        value: MsgExecuteContract.fromPartial({
+          sender: wallet?.address,
+          contract: CONTRACT_ADDRESS,
+          msg: toUtf8(
+            JSON.stringify({
+              create_offer: {
+                expires_at: "1661445174457000000",
+                offered_nfts: [
+                  {
+                    collection:
+                      "stars19hzqtwn7hkw655q84kcsry6f3rzg8gfnk38e23dkjdjurt9ctzqqn38yhu",
+                    token_id: 94,
+                  },
+                ],
+                wanted_nfts: [
+                  {
+                    collection:
+                      "stars19hzqtwn7hkw655q84kcsry6f3rzg8gfnk38e23dkjdjurt9ctzqqn38yhu",
+                    token_id: 95,
+                  },
+                ],
+                peer: "stars1cyyzpxplxdzkeea7kwsydadg87357qnat6jstn",
+              },
+            })
+          ),
+          funds: [],
+        }),
+      },
+    ];
 
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
+    let signed = await client?.signingCosmWasmClient?.sign(
+      wallet?.address!,
+      msgs,
+      fee,
+      ""
+    );
 
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
+    await client?.signingCosmWasmClient
+      ?.broadcastTx(Uint8Array.from(TxRaw.encode(signed!).finish()))
+      .then((res) => {
+        console.log(res);
+      });
+  }
 
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
+  return wallet ? (
+    <div>
+      <p>{wallet.name}</p>
+      <button onClick={disconnect}>Disconnect wallet</button>
+      <button onClick={handleSendTestOffer}>Send test offer</button>
     </div>
-  )
+  ) : (
+    <button onClick={connect}>Connect wallet</button>
+  );
+};
+
+export async function getStaticProps() {
+  await stargazeClient.connect();
+
+  const data = await stargazeClient.tradeClient?.offersBySender({
+    sender: "stars1wx0wqkyymkv278lqrpe9h52exxa87e7exj0ckg",
+  });
+
+  console.log(data);
+
+  return { props: {} };
 }
 
-export default Home
+export default Home;
