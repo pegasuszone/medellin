@@ -1,4 +1,4 @@
-import { Media } from "util/types";
+import { Media } from "util/type";
 import { classNames } from "util/css";
 
 export default function MediaView({

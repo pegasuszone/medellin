@@ -14,24 +14,8 @@ import { Coin, StdFee } from "@cosmjs/amino";
 export interface TradeReadOnlyInterface {
   contractAddress: string;
   offer: ({ id }: { id: number }) => Promise<OfferResponse>;
-  offersBySender: ({
-    limit,
-    sender,
-    startAfter,
-  }: {
-    limit?: number;
-    sender: string;
-    startAfter?: number;
-  }) => Promise<OffersResponse>;
-  offersByPeer: ({
-    limit,
-    peer,
-    startAfter,
-  }: {
-    limit?: number;
-    peer: string;
-    startAfter?: number;
-  }) => Promise<OffersResponse>;
+  offersBySender: ({ sender }: { sender: string }) => Promise<OffersResponse>;
+  offersByPeer: ({ peer }: { peer: string }) => Promise<OffersResponse>;
   params: () => Promise<ParamsResponse>;
 }
 export class TradeQueryClient implements TradeReadOnlyInterface {
@@ -55,36 +39,24 @@ export class TradeQueryClient implements TradeReadOnlyInterface {
     });
   };
   offersBySender = async ({
-    limit,
     sender,
-    startAfter,
   }: {
-    limit?: number;
     sender: string;
-    startAfter?: number;
   }): Promise<OffersResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       offers_by_sender: {
-        limit,
         sender,
-        start_after: startAfter,
       },
     });
   };
   offersByPeer = async ({
-    limit,
     peer,
-    startAfter,
   }: {
-    limit?: number;
     peer: string;
-    startAfter?: number;
   }): Promise<OffersResponse> => {
     return this.client.queryContractSmart(this.contractAddress, {
       offers_by_peer: {
-        limit,
         peer,
-        start_after: startAfter,
       },
     });
   };
@@ -104,7 +76,7 @@ export interface TradeInterface extends TradeReadOnlyInterface {
       peer,
       wantedNfts,
     }: {
-      expiresAt: Timestamp;
+      expiresAt?: Timestamp;
       offeredNfts: TokenMsg[];
       peer: string;
       wantedNfts: TokenMsg[];
@@ -182,7 +154,7 @@ export class TradeClient extends TradeQueryClient implements TradeInterface {
       peer,
       wantedNfts,
     }: {
-      expiresAt: Timestamp;
+      expiresAt?: Timestamp;
       offeredNfts: TokenMsg[];
       peer: string;
       wantedNfts: TokenMsg[];
@@ -304,7 +276,7 @@ export class TradeClient extends TradeQueryClient implements TradeInterface {
 export type ExecuteMsg =
   | {
       create_offer: {
-        expires_at: Timestamp;
+        expires_at?: Timestamp | null;
         offered_nfts: TokenMsg[];
         peer: string;
         wanted_nfts: TokenMsg[];
@@ -398,17 +370,13 @@ export type QueryMsg =
     }
   | {
       offers_by_sender: {
-        limit?: number | null;
         sender: string;
-        start_after?: number | null;
         [k: string]: unknown;
       };
     }
   | {
       offers_by_peer: {
-        limit?: number | null;
         peer: string;
-        start_after?: number | null;
         [k: string]: unknown;
       };
     }

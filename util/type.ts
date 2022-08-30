@@ -4,6 +4,12 @@ export function isPromise(value: any) {
   return Boolean(value && typeof value.then === "function");
 }
 
+export function mapObject(m: Map<any, any>): { [key: string]: any }[] {
+  return Array.from(m, ([key, value]) => {
+    return { [key]: value };
+  });
+}
+
 export type Mod = `${string}-${string}`;
 export function getNftMod(nft: Media): Mod {
   return `${nft.collection.contractAddress}-${nft.tokenId}`;

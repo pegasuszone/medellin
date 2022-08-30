@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useWallet } from "client";
 import { queryInventory } from "client/query";
 import { Header, MediaView } from "components";
-import { Media, Mod, getNftMod } from "util/types";
+import { Media, Mod, getNftMod } from "util/type";
 import { useRouter } from "next/router";
-import { classNames } from "util/css";
 
 const Inventory = () => {
   const { wallet } = useWallet();

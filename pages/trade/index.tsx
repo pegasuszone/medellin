@@ -1,19 +1,45 @@
 import { Header, MediaView } from "components";
 import { useCallback, useState, useEffect, useMemo } from "react";
-import { useWallet } from "client";
+import { useStargazeClient, useWallet } from "client";
 import copy from "copy-to-clipboard";
 import { queryInventory } from "client/query";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
-import { Mod, Media } from "util/types";
+import { Mod, Media, getNftMod } from "util/type";
+import { fromBech32, toUtf8 } from "@cosmjs/encoding";
+import { useRouter } from "next/router";
+import { coins } from "@cosmjs/amino";
+import offlineClient from "client/OfflineStargazeClient";
+import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
+import { CONTRACT_ADDRESS } from "util/constants";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+
+const fee = {
+  amount: coins(10, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
+  gas: process.env.NEXT_PUBLIC_DEFAULT_GAS_FEE!,
+};
 
 const Trade = () => {
   const { wallet } = useWallet();
+  const router = useRouter();
+  const { client } = useStargazeClient();
 
-  const [userNfts, setUserNfts] = useState<any[]>();
+  const [userNfts, setUserNfts] = useState<Media[]>();
   const [isLoadingUserNfts, setIsLoadingUserNfts] = useState<boolean>(false);
 
-  const [peerNfts, setPeerNfts] = useState<any[]>();
+  const [peerNfts, setPeerNfts] = useState<Media[]>();
   const [isLoadingPeerNfts, setIsLoadingPeerNfts] = useState<boolean>(false);
+
+  const [peerAddress, setPeerAddress] = useState<string>();
+  useEffect(() => {
+    selectedPeerNfts.clear();
+    if (peerAddress) {
+      setIsLoadingPeerNfts(true);
+      queryInventory(peerAddress).then((inventory) => {
+        setPeerNfts(inventory);
+        setIsLoadingPeerNfts(false);
+      });
+    }
+  }, [peerAddress]);
 
   const selectedUserNfts = useMemo(() => new Map<Mod, Media>(), []);
   const [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter] =
@@ -23,11 +49,50 @@ const Trade = () => {
     [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
   );
 
+  const selectedPeerNfts = useMemo(() => new Map<Mod, Media>(), []);
+  const [selectedPeerNftsRefreshCounter, setSelectedPeerNftsRefreshCounter] =
+    useState<number>(0);
+  const refreshSelectedPeerNfts = useCallback(
+    () => setSelectedPeerNftsRefreshCounter(selectedPeerNftsRefreshCounter + 1),
+    [selectedPeerNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
+  );
+
+  enum SelectTarget {
+    User,
+    Peer,
+  }
+
+  const selectNft = (target: SelectTarget, nft: any) => {
+    switch (target) {
+      case SelectTarget.User:
+        switch (selectedUserNfts.has(getNftMod(nft))) {
+          case true:
+            selectedUserNfts.delete(getNftMod(nft));
+            break;
+          case false:
+            selectedUserNfts.set(getNftMod(nft), nft);
+            break;
+        }
+        refreshSelectedUserNfts();
+        break;
+      case SelectTarget.Peer:
+        switch (selectedPeerNfts.has(getNftMod(nft))) {
+          case true:
+            selectedPeerNfts.delete(getNftMod(nft));
+            break;
+          case false:
+            selectedPeerNfts.set(getNftMod(nft), nft);
+            break;
+        }
+        refreshSelectedPeerNfts();
+        break;
+    }
+  };
+
   useEffect(() => {
     if (wallet) {
       setIsLoadingUserNfts(true);
       queryInventory(wallet?.address).then((inventory) => {
-        console.log(inventory);
         setUserNfts(inventory);
         setIsLoadingUserNfts(false);
       });
@@ -38,14 +103,146 @@ const Trade = () => {
 
   const copyTradeUrl = useCallback(() => {
     if (wallet) {
-      console.log(
-        process.env.NEXT_PUBLIC_BASE_URL! + "?peer=" + wallet?.address
-      );
       copy(process.env.NEXT_PUBLIC_BASE_URL! + "?peer=" + wallet?.address);
       setCopiedTradeUrl(true);
       setTimeout(() => setCopiedTradeUrl(false), 2000);
     }
   }, [wallet, setCopiedTradeUrl]);
+
+  const handleSendOffer = useCallback(async () => {
+    if (!peerAddress) return;
+    if (!peerNfts || !userNfts) return;
+    if (selectedUserNfts.size < 1) return;
+    if (selectedPeerNfts.size < 1) return;
+
+    const signingCosmWasmClient = client?.signingCosmWasmClient;
+
+    const msg = {
+      create_offer: {
+        peer: peerAddress,
+        offered_nfts: userNfts
+          ?.filter((nft) => selectedUserNfts.has(getNftMod(nft)))
+          .map((nft) => {
+            return {
+              collection: String(nft.collection.contractAddress),
+              token_id: parseInt(nft.tokenId),
+            };
+          }),
+        wanted_nfts: peerNfts
+          ?.filter((nft) => selectedPeerNfts.has(getNftMod(nft)))
+          .map((nft) => {
+            return {
+              collection: String(nft.collection.contractAddress),
+              token_id: parseInt(nft.tokenId),
+            };
+          }),
+      },
+    };
+
+    const wasmMsg = {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: wallet?.address,
+        msg: toUtf8(JSON.stringify(msg)),
+        contract: CONTRACT_ADDRESS,
+      }),
+    };
+
+    const msgs = [
+      ...userNfts
+        ?.filter((nft) => selectedUserNfts.has(getNftMod(nft)))
+        .map((nft) => {
+          return {
+            typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+            value: MsgExecuteContract.fromPartial({
+              sender: wallet?.address,
+              msg: toUtf8(
+                JSON.stringify({
+                  approve: {
+                    spender: CONTRACT_ADDRESS,
+                    token_id: String(nft.tokenId),
+                  },
+                })
+              ),
+              contract: String(nft.collection.contractAddress),
+            }),
+          };
+        }),
+      wasmMsg,
+    ];
+
+    let signed;
+    try {
+      if (wallet?.address) {
+        signed = await signingCosmWasmClient?.sign(
+          wallet?.address,
+          msgs,
+          fee,
+          ""
+        );
+      }
+    } catch (e: any) {
+      // toaster.toast({
+      //   title: "Error",
+      //   dismissable: true,
+      //   message: e.message as string,
+      //   type: ToastTypes.Error,
+      // });
+    }
+
+    if (signingCosmWasmClient && signed) {
+      await signingCosmWasmClient
+        .broadcastTx(Uint8Array.from(TxRaw.encode(signed).finish()))
+        .then((res) => {
+          console.log(res);
+
+          // toaster.dismiss(broadcastToastId);
+          // if (isDeliverTxSuccess(res)) {
+          //   // Run callback
+          //   if (callback) callback();
+          //   // Refresh balance
+          //   refreshBalance();
+          //   toaster.toast({
+          //     title: options.toast?.title || "Transaction Successful",
+          //     type: options.toast?.type || ToastTypes.Success,
+          //     dismissable: true,
+          //     actions: options.toast?.actions || <></>,
+          //     message: options.toast?.message || (
+          //       <>
+          //         View{" "}
+          //         <a
+          //           href={`${
+          //             process.env.NEXT_PUBLIC_BLOCK_EXPLORER as string
+          //           }/txs/${res.transactionHash}`}
+          //           rel="noopener noreferrer"
+          //           target="_blank"
+          //           className="inline"
+          //         >
+          //           transaction in explorer{" "}
+          //           <LinkIcon className="inline w-3 h-3 text-gray-400 hover:text-gray-500" />
+          //         </a>
+          //         .
+          //       </>
+          //     ),
+          //   });
+          // } else {
+          //   toaster.toast({
+          //     title: "Error",
+          //     message: res.rawLog,
+          //     type: ToastTypes.Error,
+          //   });
+          // }
+        });
+    }
+  }, [
+    wallet,
+    client,
+    peerAddress,
+    userNfts,
+    peerNfts,
+    selectedUserNfts,
+    selectedPeerNfts,
+  ]);
 
   return (
     <main>
@@ -59,34 +256,82 @@ const Trade = () => {
         </button>
       </div>
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-16">
           <p className="text-lg font-medium text-white">Your NFTs</p>
           <p className="text-lg font-medium text-white">Their NFTs</p>
         </div>
         <div className="grid h-[35vh] grid-trade-custom gap-4">
           {/* User selected NFTs */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-3"></div>
+          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-3">
+            {userNfts
+              ?.filter((nft) => selectedUserNfts.has(getNftMod(nft)))
+              .map((nft) => (
+                <MediaView
+                  nft={nft}
+                  onClick={() => selectNft(SelectTarget.User, nft)}
+                  selected={false}
+                />
+              ))}
+          </div>
           <div className="flex items-center justify-center">
             <ArrowsRightLeftIcon className="w-8 h-8 text-primary/50" />
           </div>
           {/* Peer selected NFTs */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-"></div>
+          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-3">
+            {peerNfts
+              ?.filter((nft) => selectedPeerNfts.has(getNftMod(nft)))
+              .map((nft) => (
+                <MediaView
+                  nft={nft}
+                  onClick={() => selectNft(SelectTarget.Peer, nft)}
+                  selected={false}
+                />
+              ))}
+          </div>
         </div>
         <div className="grid h-[35vh] grid-trade-custom gap-4">
           {/* User inventory */}
           <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-white/10 lg:grid-cols-3">
-            {userNfts?.map((nft) => (
-              <MediaView nft={nft} onClick={() => {}} selected={false} />
-            ))}
+            {userNfts
+              ?.filter((nft) => !selectedUserNfts.has(getNftMod(nft)))
+              .map((nft) => (
+                <MediaView
+                  nft={nft}
+                  onClick={() => selectNft(SelectTarget.User, nft)}
+                  selected={false}
+                />
+              ))}
           </div>
           <div></div>
           {/* Peer inventory */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-white/10 lg:grid-cols-3"></div>
+          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-white/10 lg:grid-cols-3">
+            {peerNfts
+              ?.filter((nft) => !selectedPeerNfts.has(getNftMod(nft)))
+              .map((nft) => (
+                <MediaView
+                  nft={nft}
+                  onClick={() => selectNft(SelectTarget.Peer, nft)}
+                  selected={false}
+                />
+              ))}
+          </div>
         </div>
       </div>
-      <div className="mt-8 lg:flex lg:flex-row lg:justify-end lg:items-center">
+      <div className="mt-8 lg:flex lg:flex-row lg:justify-between lg:items-center">
+        <input
+          className="border w-full lg:w-96 bg-firefly rounded-lg border-white/10 focus:ring focus:ring-primary ring-offset-firefly px-4 py-2.5 text-white"
+          placeholder="Enter peer address..."
+          onChange={(e) => {
+            try {
+              fromBech32(e.currentTarget.value);
+              setPeerAddress(e.currentTarget.value);
+            } catch {
+              if (!e.currentTarget.value) setPeerAddress(undefined);
+            }
+          }}
+        />
         <button
-          onClick={() => {}}
+          onClick={handleSendOffer}
           className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
         >
           Send Trade Offer
