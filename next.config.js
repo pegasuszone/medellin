@@ -4,6 +4,11 @@ module.exports = {
   async redirects() {
     return [
       {
+        source: "/",
+        destination: "/inbox",
+        permanent: false,
+      },
+      {
         source: "/tradeurl/:addr",
         destination: "/inventory?peer=:addr",
         permanent: true,

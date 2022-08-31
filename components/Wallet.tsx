@@ -4,6 +4,7 @@ import copy from "copy-to-clipboard";
 import { useWallet } from "client";
 import { useState } from "react";
 import { microAmountMultiplier } from "util/constants";
+import ReactTooltip from "@huner2/react-tooltip";
 
 import {
   ArrowRightOnRectangleIcon as LogoutIcon,
@@ -12,18 +13,24 @@ import {
 } from "@heroicons/react/24/outline";
 
 const Action = ({
+  name,
   icon,
   action,
 }: {
+  name: string;
   icon: React.ReactElement<any, any>;
   action: (e?: SyntheticEvent<Element | Event, Event>) => void;
 }) => (
-  <a
-    onClick={action}
-    className="cursor-pointer w-7 h-7 rounded p-1.5 text-white hover:bg-firefly-700"
-  >
-    {icon}
-  </a>
+  <>
+    <a
+      onClick={action}
+      data-tip={name}
+      data-for="wallet"
+      className="cursor-pointer w-7 h-7 rounded p-1.5 text-white hover:bg-firefly-700"
+    >
+      {icon}
+    </a>
+  </>
 );
 
 export default function Wallet() {
@@ -45,7 +52,7 @@ export default function Wallet() {
   );
 
   return wallet ? (
-    <div className="flex flex-row items-center justify-between px-4 py-3 mx-3 mt-3 text-white transition duration-150 ease-in-out border cursor-pointer border-black/10 hover:border-black/50 hover:dark:border-white/50 dark:border-white/10 lg:rounded-lg">
+    <div className="flex flex-row items-center justify-between px-4 py-3 mx-3 mt-3 text-white transition duration-150 ease-in-out border cursor-pointer group hover:border-white/50 border-white/10 lg:rounded-lg">
       <div>
         <p className="w-32 text-xs font-medium truncate">{wallet.name}</p>
         <p className="text-xs font-light">
@@ -61,12 +68,20 @@ export default function Wallet() {
         </p>
       </div>
 
-      <div className="flex flex-row space-x-2">
+      <div className="flex-row hidden space-x-2 group-hover:flex">
+        <ReactTooltip
+          id="wallet"
+          effect="solid"
+          type="info"
+          className="tooltip"
+          arrowColor="rgba(0,0,0,0)"
+        />
         <Action
+          name="Copy Address"
           icon={copied ? <CheckIcon /> : <CopyIcon />}
           action={handleCopy}
         />
-        <Action icon={<LogoutIcon />} action={disconnect} />
+        <Action name="Disconnect" icon={<LogoutIcon />} action={disconnect} />
       </div>
     </div>
   ) : (

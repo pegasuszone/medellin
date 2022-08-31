@@ -3,11 +3,9 @@ import { Fragment, useState } from "react";
 import { Transition, Menu, Dialog } from "@headlessui/react";
 import { classNames } from "util/css";
 import {
-  BellIcon,
   Bars3Icon as MenuIcon,
   XMarkIcon as XIcon,
 } from "@heroicons/react/24/outline";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
 import Wallet from "./Wallet";
 import Link from "next/link";
 

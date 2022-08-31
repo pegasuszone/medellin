@@ -66,7 +66,7 @@ function customToast(
         className={classNames(
           t.visible ? "animate-enter" : "animate-leave",
           dismissable ? "cursor-pointer" : "",
-          "max-w-sm group w-full bg-white dark:bg-black border border-black/10 dark:border-white/10 shadow-lg rounded-lg pointer-events-auto p-4"
+          "max-w-sm group w-full absolute right-0 top-0 bg-firefly border border-white/10 shadow-lg rounded-lg pointer-events-auto p-4"
         )}
       >
         <div className="flex items-start">
@@ -75,15 +75,9 @@ function customToast(
           </div>
 
           <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
-              {title}
-            </p>
+            <p className="text-sm font-medium text-white">{title}</p>
 
-            {message && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {message}
-              </p>
-            )}
+            {message && <p className="mt-1 text-sm text-gray-400">{message}</p>}
 
             {actions}
           </div>

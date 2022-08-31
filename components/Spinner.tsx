@@ -22,3 +22,7 @@ export default function Spinner({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export function LogoSpinner() {
+  return <img src="/logo.png" className="w-12 h-12 animate-spin" />;
+}

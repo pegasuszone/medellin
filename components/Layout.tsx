@@ -5,39 +5,47 @@ import { useRouter } from "next/router";
 
 import {
   CubeIcon,
-  ChatBubbleOvalLeftEllipsisIcon as ChatIcon,
-  ClockIcon,
+  ArrowsUpDownIcon,
   InboxStackIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/outline";
+import { useWallet } from "client";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { wallet } = useWallet();
+
+  const connectedNavigation = wallet
+    ? [
+        {
+          name: "Trade",
+          href: "/trade",
+          icon: ArrowsUpDownIcon,
+          current: router.asPath.split("/").includes("trade"),
+        },
+        {
+          name: "Sent Offers",
+          href: "/sent",
+          icon: EnvelopeIcon,
+          current: router.asPath.split("/").includes("sent"),
+        },
+        {
+          name: "Inventory",
+          href: "/inventory",
+          icon: CubeIcon,
+          current: router.asPath.split("/").includes("inventory"),
+        },
+      ]
+    : [];
 
   const navigation = [
     {
-      name: "Trade",
-      href: "/trade",
-      icon: CubeIcon,
-      current: router.asPath.split("/").includes("trade"),
-    },
-    // {
-    //   name: "Messages",
-    //   href: "/messages",
-    //   icon: ChatIcon,
-    //   current: router.asPath.split("/").includes("messages"),
-    // },
-    // {
-    //   name: "History",
-    //   href: "/history",
-    //   icon: ClockIcon,
-    //   current: router.asPath.split("/").includes("history"),
-    // },
-    {
-      name: "Inventory",
-      href: "/inventory",
+      name: "Inbox",
+      href: "/inbox",
       icon: InboxStackIcon,
-      current: router.asPath.split("/").includes("inventory"),
+      current: router.asPath.split("/").includes("inbox"),
     },
+    ...connectedNavigation,
   ];
 
   return (

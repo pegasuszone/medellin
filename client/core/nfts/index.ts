@@ -22,6 +22,7 @@ export default class NFTS {
       const collection = await this.stargazeClient.collections.getOneByAddress(
         collectionAddress
       );
+      const client = this.stargazeClient.cosmWasmClient;
       const sg721 = new Sg721QueryClient(client, collectionAddress);
 
       return getNFT({

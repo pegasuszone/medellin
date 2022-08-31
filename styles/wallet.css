@@ -29,3 +29,10 @@
 .cvonuO {
   color: rgba(255, 255, 255, 0.8) !important;
 }
+
+/* Tooltip coloring */
+.tooltip {
+  background-color: #141948 !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}

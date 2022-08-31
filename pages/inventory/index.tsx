@@ -31,7 +31,7 @@ const Inventory = () => {
     refreshSelectedNfts();
   };
 
-  const [nfts, setNfts] = useState<any[]>();
+  const [nfts, setNfts] = useState<Media[]>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {

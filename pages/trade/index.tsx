@@ -6,12 +6,13 @@ import { queryInventory } from "client/query";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 import { Mod, Media, getNftMod } from "util/type";
 import { fromBech32, toUtf8 } from "@cosmjs/encoding";
-import { useRouter } from "next/router";
+import { Router, useRouter } from "next/router";
 import { coins } from "@cosmjs/amino";
 import offlineClient from "client/OfflineStargazeClient";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { CONTRACT_ADDRESS } from "util/constants";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { useTx } from "contexts/tx";
 
 const fee = {
   amount: coins(10, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
@@ -20,8 +21,10 @@ const fee = {
 
 const Trade = () => {
   const { wallet } = useWallet();
-  const router = useRouter();
+  const { tx } = useTx();
   const { client } = useStargazeClient();
+
+  const router = useRouter();
 
   const [userNfts, setUserNfts] = useState<Media[]>();
   const [isLoadingUserNfts, setIsLoadingUserNfts] = useState<boolean>(false);
@@ -171,69 +174,9 @@ const Trade = () => {
       wasmMsg,
     ];
 
-    let signed;
-    try {
-      if (wallet?.address) {
-        signed = await signingCosmWasmClient?.sign(
-          wallet?.address,
-          msgs,
-          fee,
-          ""
-        );
-      }
-    } catch (e: any) {
-      // toaster.toast({
-      //   title: "Error",
-      //   dismissable: true,
-      //   message: e.message as string,
-      //   type: ToastTypes.Error,
-      // });
-    }
-
-    if (signingCosmWasmClient && signed) {
-      await signingCosmWasmClient
-        .broadcastTx(Uint8Array.from(TxRaw.encode(signed).finish()))
-        .then((res) => {
-          console.log(res);
-
-          // toaster.dismiss(broadcastToastId);
-          // if (isDeliverTxSuccess(res)) {
-          //   // Run callback
-          //   if (callback) callback();
-          //   // Refresh balance
-          //   refreshBalance();
-          //   toaster.toast({
-          //     title: options.toast?.title || "Transaction Successful",
-          //     type: options.toast?.type || ToastTypes.Success,
-          //     dismissable: true,
-          //     actions: options.toast?.actions || <></>,
-          //     message: options.toast?.message || (
-          //       <>
-          //         View{" "}
-          //         <a
-          //           href={`${
-          //             process.env.NEXT_PUBLIC_BLOCK_EXPLORER as string
-          //           }/txs/${res.transactionHash}`}
-          //           rel="noopener noreferrer"
-          //           target="_blank"
-          //           className="inline"
-          //         >
-          //           transaction in explorer{" "}
-          //           <LinkIcon className="inline w-3 h-3 text-gray-400 hover:text-gray-500" />
-          //         </a>
-          //         .
-          //       </>
-          //     ),
-          //   });
-          // } else {
-          //   toaster.toast({
-          //     title: "Error",
-          //     message: res.rawLog,
-          //     type: ToastTypes.Error,
-          //   });
-          // }
-        });
-    }
+    tx(msgs, {}, () => {
+      router.push("/sent");
+    });
   }, [
     wallet,
     client,

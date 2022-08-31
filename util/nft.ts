@@ -1,5 +1,25 @@
+import type { Token } from "types/contract";
+import type { Media } from "util/type";
+import type { StargazeClient } from "client";
+
 // @ts-ignore
 import dJSON from "dirty-json";
+
+export async function fetchNfts(
+  tokens: Token[],
+  client: StargazeClient
+): Promise<Media[]> {
+  const data = tokens.map((nft) => {
+    return client?.nfts
+      .getOne({ collectionAddress: nft.collection, tokenId: nft.token_id })
+      .then((data) => {
+        return data;
+      });
+  });
+
+  const nfts = await Promise.all(data);
+  return nfts;
+}
 
 export async function fetchTokenUriInfo(tokenUri: string) {
   // Some artists have a double slash, so we need to clean it

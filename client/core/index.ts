@@ -23,7 +23,7 @@ export class StargazeClient {
   private _cosmWasmClient: CosmWasmClient | null = null;
   public signingCosmWasmClient: SigningCosmWasmClient | null = null;
 
-  public tradeClient: TradeQueryClient | null = null;
+  private _tradeClient: TradeQueryClient | null = null;
   public signingTradeClient: TradeClient | null = null;
 
   public tradeContract: string;
@@ -68,6 +68,10 @@ export class StargazeClient {
     return this._cosmWasmClient as CosmWasmClient;
   }
 
+  public get tradeClient(): TradeQueryClient | TradeClient {
+    return this.signingTradeClient || (this._tradeClient as TradeClient);
+  }
+
   public get wallet(): WalletData {
     return this._wallet as WalletData;
   }
@@ -108,13 +112,13 @@ export class StargazeClient {
         this.tradeContract
       );
     } else if (this.cosmWasmClient) {
-      this.tradeClient = new TradeQueryClient(
+      this._tradeClient = new TradeQueryClient(
         this.cosmWasmClient,
         this.tradeContract
       );
     }
 
-    return this.signingTradeClient ?? this.tradeClient;
+    return this.signingTradeClient ?? this._tradeClient;
   }
 
   public async connectSigning() {
