@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { now } from "mongoose";
 import nanoid from "nanoid";
 
 const prisma = new PrismaClient();
@@ -15,7 +14,7 @@ export async function getDestination(path:string) {
     return shortUrl?.destination
 }
 
-export async function createShortUrl(destination: string) {
+export async function CreateShortUrl(destination: string) {
     const short_url = await prisma.shortUrl.create({
         data: {
             destination: destination,

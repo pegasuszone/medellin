@@ -13,6 +13,7 @@ import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { CONTRACT_ADDRESS } from "util/constants";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { useTx } from "contexts/tx";
+import { CreateShortUrl, getDestination } from "prisma";
 
 const fee = {
   amount: coins(10, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
@@ -104,9 +105,12 @@ const Trade = () => {
 
   const [copiedTradeUrl, setCopiedTradeUrl] = useState<boolean>(false);
 
-  const copyTradeUrl = useCallback(() => {
+  const copyTradeUrl = useCallback(async () => {
     if (wallet) {
-      copy(process.env.NEXT_PUBLIC_BASE_URL! + "?peer=" + wallet?.address);
+      // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
+      const shortUrl = await CreateShortUrl("?peer=" + wallet?.address)
+      copy( process.env.SHORT_PUBLIC_URL + shortUrl );
+
       setCopiedTradeUrl(true);
       setTimeout(() => setCopiedTradeUrl(false), 2000);
     }
