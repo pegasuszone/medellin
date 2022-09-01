@@ -9,8 +9,8 @@ module.exports = {
         permanent: false,
       },
       {
-        source: "/tradeurl/:addr",
-        destination: "/inventory?peer=:addr",
+        source: "/link/:addr",
+        destination: "/trade?peer=:addr",
         permanent: true,
       },
     ];

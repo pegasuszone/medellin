@@ -13,7 +13,7 @@ import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { CONTRACT_ADDRESS } from "util/constants";
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { useTx } from "contexts/tx";
-import { CreateShortUrl, getDestination } from "prisma";
+import { ShortUrl } from "@prisma/client";
 
 const fee = {
   amount: coins(10, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
@@ -107,13 +107,28 @@ const Trade = () => {
 
   const copyTradeUrl = useCallback(async () => {
     if (wallet) {
-      // This can include a pre-selected array of nfts 
-      const tradePath = "?peer=" + wallet?.address
-      
-      // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
-      const shortUrl = await CreateShortUrl(tradePath)
+      // This can include a pre-selected array of nfts
+      const tradePath = "?peer=" + wallet?.address;
 
-      copy( process.env.SHORT_PUBLIC_URL + shortUrl );
+      // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
+      const shortUrl: ShortUrl = await fetch("/api/shorturl", {
+        method: "POST",
+        body: JSON.stringify({
+          destination: tradePath,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => {
+          console.log(res);
+          return res.json();
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+
+      copy(`${process.env.NEXT_PUBLIC_SHORT_URL!}/${shortUrl.tiny_url}`);
 
       setCopiedTradeUrl(true);
       setTimeout(() => setCopiedTradeUrl(false), 2000);

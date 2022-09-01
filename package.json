@@ -1,9 +1,22 @@
 {
+  "name": "pegasus",
+  "description": "A peer-to-peer NFT trading platform for the Stargaze blockchain.",
+  "author": "Maurits Bos <mb.brains@gmail.com> & Josef Leventon <josef.leventon@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pegasuszone/trade.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pegasuszone/trade/issues"
+  },
+  "homepage": "https://pegasus-trade.zone",
+  "license": "ISC",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "build": "yarn prisma:generate && next build",
+    "start": "next start",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@cosmjs/encoding": "^0.28.13",
@@ -13,7 +26,7 @@
     "@huner2/react-tooltip": "^4.2.22",
     "@keplr-wallet/cosmos": "^0.10.19",
     "@keplr-wallet/types": "^0.10.19",
-    "@prisma/client": "^4.2.1",
+    "@prisma/client": "4.2.0",
     "@stargazezone/types": "^0.9.0",
     "animate.css": "^4.1.1",
     "copy-to-clipboard": "^3.3.2",
@@ -22,6 +35,7 @@
     "mongoose": "^6.5.3",
     "nanoid": "^4.0.0",
     "next": "latest",
+    "prisma": "4.2.0",
     "react": "18.1.0",
     "react-dom": "18.1.0",
     "react-hot-toast": "^2.3.0"
@@ -38,6 +52,7 @@
     "@types/react": "18.0.9",
     "@types/react-dom": "18.0.5",
     "autoprefixer": "^10.4.7",
+    "dotenv-cli": "^6.0.0",
     "nodemon": "^2.0.19",
     "postcss": "^8.4.14",
     "tailwind-scrollbar-hide": "^1.1.7",
