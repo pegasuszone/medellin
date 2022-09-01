@@ -121,7 +121,6 @@ const Trade = () => {
         },
       })
         .then((res) => {
-          console.log(res);
           return res.json();
         })
         .catch((e) => {
