@@ -107,8 +107,12 @@ const Trade = () => {
 
   const copyTradeUrl = useCallback(async () => {
     if (wallet) {
+      // This can include a pre-selected array of nfts 
+      const tradePath = "?peer=" + wallet?.address
+      
       // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
-      const shortUrl = await CreateShortUrl("?peer=" + wallet?.address)
+      const shortUrl = await CreateShortUrl(tradePath)
+
       copy( process.env.SHORT_PUBLIC_URL + shortUrl );
 
       setCopiedTradeUrl(true);
