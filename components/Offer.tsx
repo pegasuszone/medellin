@@ -6,6 +6,7 @@ import { fetchNfts } from "util/nft";
 import { getNftMod, Media } from "util/type";
 import Address from "./Address";
 import ReactTooltip from "@huner2/react-tooltip";
+import { Modal } from "./Modal";
 
 const OfferNft = ({ nft }: { nft: Media }) => {
   return (
@@ -43,6 +44,8 @@ export default function OfferView({ offer }: { offer: Offer }) {
 
   const [isLoading, setIsLoading] = useState<boolean>();
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
   // Fetch wanted & offered nfts
   useEffect(() => {
     if (wallet && client) {
@@ -63,6 +66,7 @@ export default function OfferView({ offer }: { offer: Offer }) {
 
   return (
     <>
+      <Modal isModalOpen={isModalOpen} />
       <div className="flex flex-col p-4 border rounded-lg border-white/10">
         <div className="grid grid-cols-2 gap-12">
           <Address address={offer.sender} copy />
@@ -90,7 +94,10 @@ export default function OfferView({ offer }: { offer: Offer }) {
             <button className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-32 hover:bg-primary hover:border-none">
               Details
             </button>
-            <button className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
+            >
               Reply
             </button>
           </div>
