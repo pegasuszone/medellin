@@ -10,6 +10,7 @@ import { useRouter } from "next/router";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { CONTRACT_ADDRESS } from "util/constants";
 import { useTx } from "contexts/tx";
+import { ShortUrl } from "@prisma/client";
 import useToaster, { ToastTypes } from "hooks/useToaster";
 import { classNames } from "util/css";
 
@@ -196,9 +197,30 @@ const Trade = () => {
 
   const [copiedTradeUrl, setCopiedTradeUrl] = useState<boolean>(false);
 
-  const copyTradeUrl = useCallback(() => {
+  const copyTradeUrl = useCallback(async () => {
     if (wallet) {
-      copy(process.env.NEXT_PUBLIC_BASE_URL! + "?peer=" + wallet?.address);
+      // This can include a pre-selected array of nfts
+      const tradePath = "?peer=" + wallet?.address;
+
+      // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
+      const shortUrl: ShortUrl = await fetch("/api/shorturl", {
+        method: "POST",
+        body: JSON.stringify({
+          destination: tradePath,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => {
+          return res.json();
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+
+      copy(`${process.env.NEXT_PUBLIC_SHORT_URL!}/${shortUrl.tiny_url}`);
+
       toaster.toast({
         title: "Trade URL copied!",
         type: ToastTypes.Success,

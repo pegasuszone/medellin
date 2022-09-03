@@ -8,3 +8,5 @@ export const CONTRACT_CODEID = parseInt(
 export const SG721_CODEID = parseInt(process.env.NEXT_PUBLIC_SG721_CODEID!);
 
 export const NFT_API = process.env.NEXT_PUBLIC_NFT_API!;
+
+export const MONGODB_URI = process.env.NEXT_PUBLIC_MONGODB_URI!;
