@@ -1,25 +1,38 @@
 import type { AppProps } from "next/app";
 import WalletProvider from "client/react/wallet/WalletProvider";
 import { TxProvider } from "contexts/tx";
-import { ToasterContainer } from "hooks/useToaster";
 import Layout from "components/Layout";
-import ReactTooltip from "@huner2/react-tooltip";
+import Head from "next/head";
+import { ErrorInfo } from "react";
+import { Toaster } from "react-hot-toast";
 
 import "animate.css";
 import "styles/globals.css";
 import "styles/wallet.css";
 
-function MyApp({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppProps) {
   return (
-    <WalletProvider>
-      <TxProvider>
-        <ToasterContainer containerClassName="md:mt-24" position="top-right" />
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </TxProvider>
-    </WalletProvider>
+    <>
+      <Head>
+        <meta
+          name="viewport"
+          content="viewport-fit=cover, width=device-width, initial-scale=1, user-scalable=no"
+        />
+      </Head>
+      <Toaster position="top-right" />
+      <WalletProvider>
+        <TxProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </TxProvider>
+      </WalletProvider>
+    </>
   );
 }
 
-export default MyApp;
+App.componentDidCatch = (error: Error, errorInfo: ErrorInfo) => {
+  console.error(error, errorInfo);
+};
+
+export default App;

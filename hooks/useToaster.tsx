@@ -31,27 +31,22 @@ function customToast(
   options?: ToastOptions
 ): any {
   let Icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
-  let color: string;
 
   switch (type) {
     case ToastTypes.Success: {
       Icon = CheckCircleIcon;
-      color = "text-green-500";
       break;
     }
     case ToastTypes.Error: {
       Icon = ExclamationCircleIcon;
-      color = "text-red-500";
       break;
     }
     case ToastTypes.Pending: {
       Icon = Spinner;
-      color = "text-gray-500";
       break;
     }
     case ToastTypes.Warning: {
       Icon = ExclamationTriangleIcon;
-      color = "text-yellow-500";
       break;
     }
   }
@@ -66,12 +61,12 @@ function customToast(
         className={classNames(
           t.visible ? "animate-enter" : "animate-leave",
           dismissable ? "cursor-pointer" : "",
-          "max-w-sm group w-full absolute right-0 top-0 bg-firefly border border-white/10 shadow-lg rounded-lg pointer-events-auto p-4"
+          "group w-full max-w-sm bg-firefly border border-white/10 shadow-lg rounded-lg pointer-events-auto p-4"
         )}
       >
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <Icon className={`h-6 w-6 ${color}`} aria-hidden="true" />
+            <Icon className="w-6 h-6" aria-hidden="true" />
           </div>
 
           <div className="ml-3 w-0 flex-1 pt-0.5">

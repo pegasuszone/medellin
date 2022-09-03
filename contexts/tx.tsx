@@ -14,6 +14,7 @@ export interface Msg {
 
 export interface TxOptions {
   party?: boolean;
+  gas?: number;
   toast?: {
     title?: ToastPayload["title"];
     message?: ToastPayload["message"];
@@ -21,11 +22,6 @@ export interface TxOptions {
     actions?: JSX.Element;
   };
 }
-
-const fee = {
-  amount: coins(0, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
-  gas: process.env.NEXT_PUBLIC_DEFAULT_GAS_FEE!,
-};
 
 export interface TxContext {
   tx: (msgs: Msg[], options: TxOptions, callback?: () => void) => Promise<void>;
@@ -44,6 +40,14 @@ export function TxProvider({ children }: { children: ReactNode }) {
 
   // Method to sign & broadcast transaction
   const tx = async (msgs: Msg[], options: TxOptions, callback?: () => void) => {
+    // Gas config
+    const fee = {
+      amount: coins(0, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
+      gas: options.gas
+        ? String(options.gas)
+        : process.env.NEXT_PUBLIC_DEFAULT_GAS_FEE!,
+    };
+
     // Broadcast the redelegation message to Keplr
     let signed;
     try {
@@ -66,6 +70,14 @@ export function TxProvider({ children }: { children: ReactNode }) {
 
     let broadcastToastId = "";
 
+    broadcastToastId = toaster.toast(
+      {
+        title: "Broadcasting transaction...",
+        type: ToastTypes.Pending,
+      },
+      { duration: 999999 }
+    );
+
     if (signingCosmwasmClient && signed) {
       await signingCosmwasmClient
         .broadcastTx(Uint8Array.from(TxRaw.encode(signed).finish()))
@@ -87,9 +99,9 @@ export function TxProvider({ children }: { children: ReactNode }) {
                 <>
                   View{" "}
                   <a
-                    href={`${
-                      process.env.NEXT_PUBLIC_BLOCK_EXPLORER as string
-                    }/txs/${res.transactionHash}`}
+                    href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER!}/txs/${
+                      res.transactionHash
+                    }`}
                     rel="noopener noreferrer"
                     target="_blank"
                     className="inline"
@@ -109,6 +121,8 @@ export function TxProvider({ children }: { children: ReactNode }) {
             });
           }
         });
+    } else {
+      toaster.dismiss(broadcastToastId);
     }
   };
 
