@@ -87,7 +87,8 @@ export default function Navigation({
                   className="flex-shrink-0 h-full mt-5 overflow-y-auto divide-y divide-white"
                   aria-label="Sidebar"
                 >
-                  <div className="px-2 space-y-1">
+                  <div className="flex flex-col flex-grow-0 px-2 space-y-1">
+                    <Wallet />
                     {navigation.map((item) => (
                       <a
                         key={item.name}

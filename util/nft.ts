@@ -69,7 +69,10 @@ export function getNFTLink({
   contract: string;
   tokenId: string | number;
 }) {
+  const baseUrl = process.env.NEXT_PUBLIC_STARGAZE_BASE_URL!;
   const linkBase = marketplaceLink ? "/marketplace/" : "/media/";
-  const link = `${linkBase}${contract}/${encodeURIComponent(tokenId)}`;
+  const link = `${baseUrl}/${linkBase}${contract}/${encodeURIComponent(
+    tokenId
+  )}`;
   return link;
 }

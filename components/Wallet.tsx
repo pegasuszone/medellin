@@ -52,9 +52,11 @@ export default function Wallet() {
   );
 
   return wallet ? (
-    <div className="flex flex-row items-center justify-between px-4 py-3 mx-3 mt-3 text-white transition duration-150 ease-in-out border cursor-pointer group hover:border-white/50 border-white/10 lg:rounded-lg">
+    <div className="flex flex-row items-center justify-between px-4 py-3 mt-3 mb-4 text-white transition duration-150 ease-in-out border rounded-lg cursor-pointer lg:mx-3 lg:mb-0 group hover:border-white/50 border-white/10">
       <div>
-        <p className="w-32 text-xs font-medium truncate">{wallet.name}</p>
+        <p className="w-48 text-xs font-medium truncate lg:group-hover:w-32">
+          {wallet.name}
+        </p>
         <p className="text-xs font-light">
           {new Intl.NumberFormat(`en-US`, {
             style: "currency",
@@ -68,7 +70,7 @@ export default function Wallet() {
         </p>
       </div>
 
-      <div className="flex-row hidden space-x-2 group-hover:flex">
+      <div className="flex flex-row space-x-2 lg:hidden lg:group-hover:flex">
         <ReactTooltip
           id="wallet"
           effect="solid"
@@ -87,7 +89,7 @@ export default function Wallet() {
   ) : (
     <button
       onClick={connect}
-      className="inline-flex items-center justify-center py-4 mx-4 mt-4 text-sm font-medium text-white rounded-lg bg-primary"
+      className="inline-flex items-center justify-center py-4 mt-4 mb-4 text-sm font-medium text-white rounded-lg lg:mb-0 lg:mx-4 bg-primary"
     >
       Connect
     </button>

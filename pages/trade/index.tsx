@@ -1,30 +1,90 @@
-import { Header, MediaView } from "components";
+import { capitalize } from "lodash";
+import { Header, MediaView, LogoSpinner } from "components";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { useStargazeClient, useWallet } from "client";
 import copy from "copy-to-clipboard";
 import { queryInventory } from "client/query";
-import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 import { Mod, Media, getNftMod } from "util/type";
 import { fromBech32, toUtf8 } from "@cosmjs/encoding";
-import { Router, useRouter } from "next/router";
-import { coins } from "@cosmjs/amino";
-import offlineClient from "client/OfflineStargazeClient";
+import { useRouter } from "next/router";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { CONTRACT_ADDRESS } from "util/constants";
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { useTx } from "contexts/tx";
+import useToaster, { ToastTypes } from "hooks/useToaster";
+import { classNames } from "util/css";
 
-const fee = {
-  amount: coins(10, process.env.NEXT_PUBLIC_DEFAULT_GAS_DENOM!),
-  gas: process.env.NEXT_PUBLIC_DEFAULT_GAS_FEE!,
-};
+enum SelectTarget {
+  User,
+  Peer,
+}
+
+type Tab = "user" | "peer";
+
+const TabItem = ({
+  id,
+  name,
+  current,
+  handleClick,
+}: {
+  id: Tab;
+  name: string;
+  current: boolean;
+  handleClick: (name: Tab) => void;
+}) => (
+  <a
+    onClick={() => handleClick(id)}
+    className={classNames(
+      current ? "bg-firefly-700" : "bg-firefly hover:bg-firefly-800",
+      "inline-flex py-1.5 px-2 cursor-pointer items-center justify-center w-full border rounded-md border-white/10"
+    )}
+  >
+    <p className="text-lg font-medium text-white">{name}</p>
+  </a>
+);
+
+const tabs: {
+  id: Tab;
+  name: string;
+}[] = [
+  {
+    id: "user",
+    name: "Your Inventory",
+  },
+  {
+    id: "peer",
+    name: "Their Inventory",
+  },
+];
+
+const Inventory = ({
+  nfts,
+  handleClick,
+}: {
+  nfts: Media[];
+  handleClick: (nft: Media) => void;
+}) => (
+  <div className="h-full p-4 overflow-y-scroll border rounded-lg border-white/10">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+      {nfts.map((nft) => (
+        <MediaView
+          nft={nft}
+          onClick={() => handleClick(nft)}
+          selected={false}
+        />
+      ))}
+    </div>
+  </div>
+);
 
 const Trade = () => {
   const { wallet } = useWallet();
   const { tx } = useTx();
   const { client } = useStargazeClient();
 
+  const toaster = useToaster();
   const router = useRouter();
+
+  const [currentTab, setCurrentTab] = useState<Tab>("user");
 
   const [userNfts, setUserNfts] = useState<Media[]>();
   const [isLoadingUserNfts, setIsLoadingUserNfts] = useState<boolean>(false);
@@ -60,10 +120,22 @@ const Trade = () => {
     [selectedPeerNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
   );
 
-  enum SelectTarget {
-    User,
-    Peer,
-  }
+  const inventoryNfts = useMemo(() => {
+    switch (currentTab) {
+      case "user":
+        return userNfts?.filter((nft) => !selectedUserNfts.has(getNftMod(nft)));
+      case "peer":
+        return peerNfts?.filter((nft) => !selectedPeerNfts.has(getNftMod(nft)));
+    }
+  }, [
+    currentTab,
+    userNfts,
+    peerNfts,
+    selectedUserNfts,
+    selectedPeerNfts,
+    selectedUserNftsRefreshCounter,
+    selectedPeerNftsRefreshCounter,
+  ]);
 
   const selectNft = (target: SelectTarget, nft: any) => {
     switch (target) {
@@ -92,6 +164,26 @@ const Trade = () => {
     }
   };
 
+  const handleInventoryItemClick = useCallback(
+    (nft: Media) => {
+      let target: SelectTarget;
+
+      switch (currentTab) {
+        case "user":
+          target = SelectTarget.User;
+          break;
+        case "peer":
+          target = SelectTarget.Peer;
+          break;
+      }
+
+      console.log(target, nft);
+
+      selectNft(target, nft);
+    },
+    [currentTab, selectNft]
+  );
+
   useEffect(() => {
     if (wallet) {
       setIsLoadingUserNfts(true);
@@ -107,6 +199,11 @@ const Trade = () => {
   const copyTradeUrl = useCallback(() => {
     if (wallet) {
       copy(process.env.NEXT_PUBLIC_BASE_URL! + "?peer=" + wallet?.address);
+      toaster.toast({
+        title: "Trade URL copied!",
+        type: ToastTypes.Success,
+        dismissable: true,
+      });
       setCopiedTradeUrl(true);
       setTimeout(() => setCopiedTradeUrl(false), 2000);
     }
@@ -117,8 +214,6 @@ const Trade = () => {
     if (!peerNfts || !userNfts) return;
     if (selectedUserNfts.size < 1) return;
     if (selectedPeerNfts.size < 1) return;
-
-    const signingCosmWasmClient = client?.signingCosmWasmClient;
 
     const msg = {
       create_offer: {
@@ -189,75 +284,74 @@ const Trade = () => {
 
   return (
     <main>
-      <div className="flex flex-col space-y-4 lg:items-center lg:space-y-0 lg:flex-row lg:justify-between">
+      <div className="flex flex-col space-y-2 lg:items-center lg:space-y-0 lg:flex-row lg:justify-between">
         <Header>Trade</Header>
-        <button
-          onClick={copyTradeUrl}
-          className="inline-flex items-center justify-center w-48 h-10 text-xs font-medium text-white border border-white rounded-lg hover:bg-primary hover:border-none"
-        >
-          {copiedTradeUrl ? "Copied!" : "Copy Trade URL"}
-        </button>
+        {wallet && (
+          <button
+            onClick={copyTradeUrl}
+            className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-48 hover:bg-primary hover:border-none"
+          >
+            {copiedTradeUrl ? "Copied!" : "Copy Trade URL"}
+          </button>
+        )}
       </div>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-16">
-          <p className="text-lg font-medium text-white">Your NFTs</p>
-          <p className="text-lg font-medium text-white">Their NFTs</p>
-        </div>
-        <div className="grid h-[35vh] grid-trade-custom gap-4">
-          {/* User selected NFTs */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-3">
-            {userNfts
-              ?.filter((nft) => selectedUserNfts.has(getNftMod(nft)))
-              .map((nft) => (
-                <MediaView
-                  nft={nft}
-                  onClick={() => selectNft(SelectTarget.User, nft)}
-                  selected={false}
-                />
-              ))}
+      <div className="grid grid-cols-1 gap-8 mt-6 lg:grid-cols-2 lg:mt-0">
+        <div>
+          <div className="grid grid-cols-1 gap-2 mb-4 lg:grid-cols-2">
+            {tabs.map((tab) => (
+              <TabItem
+                {...tab}
+                current={currentTab === tab.id}
+                handleClick={(name: Tab) => setCurrentTab(name)}
+              />
+            ))}
           </div>
-          <div className="flex items-center justify-center">
-            <ArrowsRightLeftIcon className="w-8 h-8 text-primary/50" />
-          </div>
-          {/* Peer selected NFTs */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-primary/50 lg:grid-cols-3">
-            {peerNfts
-              ?.filter((nft) => selectedPeerNfts.has(getNftMod(nft)))
-              .map((nft) => (
-                <MediaView
-                  nft={nft}
-                  onClick={() => selectNft(SelectTarget.Peer, nft)}
-                  selected={false}
-                />
-              ))}
+          <div className="lg:h-[75vh]">
+            <Inventory
+              nfts={inventoryNfts || []}
+              handleClick={handleInventoryItemClick}
+            />
           </div>
         </div>
-        <div className="grid h-[35vh] grid-trade-custom gap-4">
-          {/* User inventory */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-white/10 lg:grid-cols-3">
-            {userNfts
-              ?.filter((nft) => !selectedUserNfts.has(getNftMod(nft)))
-              .map((nft) => (
-                <MediaView
-                  nft={nft}
-                  onClick={() => selectNft(SelectTarget.User, nft)}
-                  selected={false}
-                />
-              ))}
+        <div className="space-y-4 lg:grid grid-trade-custom lg:gap-4 lg:space-y-0">
+          <div>
+            <p className="text-xl font-medium">Your Items</p>
+            <p className="font-medium text-white/75">
+              Once the trade is completed, they will receieve these items:
+            </p>
+            <div className="h-full mt-4">
+              <Inventory
+                nfts={
+                  userNfts?.filter((nft) =>
+                    selectedUserNfts.has(getNftMod(nft))
+                  ) || []
+                }
+                handleClick={handleInventoryItemClick}
+              />
+            </div>
           </div>
-          <div></div>
-          {/* Peer inventory */}
-          <div className="grid grid-cols-2 gap-2 p-4 overflow-y-scroll border rounded-lg border-white/10 lg:grid-cols-3">
-            {peerNfts
-              ?.filter((nft) => !selectedPeerNfts.has(getNftMod(nft)))
-              .map((nft) => (
-                <MediaView
-                  nft={nft}
-                  onClick={() => selectNft(SelectTarget.Peer, nft)}
-                  selected={false}
-                />
-              ))}
+          <div>
+            <p className="text-xl font-medium">Their Items</p>
+            <p className="font-medium text-white/75">
+              Once the trade is completed, you will receieve these items:
+            </p>
+            <div className="h-full mt-4">
+              <Inventory
+                nfts={
+                  peerNfts?.filter((nft) =>
+                    selectedPeerNfts.has(getNftMod(nft))
+                  ) || []
+                }
+                handleClick={handleInventoryItemClick}
+              />
+            </div>
           </div>
+          {/* <button
+            onClick={handleSendOffer}
+            className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
+          >
+            Send Trade Offer
+          </button> */}
         </div>
       </div>
       <div className="mt-8 lg:flex lg:flex-row lg:justify-between lg:items-center">
