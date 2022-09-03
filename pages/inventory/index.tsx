@@ -9,28 +9,6 @@ const Inventory = () => {
   const { wallet } = useWallet();
   const router = useRouter();
 
-  const { peer } = router.query;
-
-  const selectedNfts = useMemo(() => new Map<Mod, Media>(), []);
-  const [selectedNftsRefreshCounter, setSelectedNftsRefreshCounter] =
-    useState<number>(0);
-  const refreshSelectedNfts = useCallback(
-    () => setSelectedNftsRefreshCounter(selectedNftsRefreshCounter + 1),
-    [selectedNftsRefreshCounter, setSelectedNftsRefreshCounter]
-  );
-
-  const selectNft = (nft: any) => {
-    switch (selectedNfts.has(getNftMod(nft))) {
-      case true:
-        selectedNfts.delete(getNftMod(nft));
-        break;
-      case false:
-        selectedNfts.set(getNftMod(nft), nft);
-        break;
-    }
-    refreshSelectedNfts();
-  };
-
   const [nfts, setNfts] = useState<Media[]>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -45,35 +23,10 @@ const Inventory = () => {
     }
   }, [wallet]);
 
-  const createTrade = useCallback(() => {
-    let selectedNftMods = [];
-    for (const key of selectedNfts.keys()) selectedNftMods.push(key);
-    const selectedNftsString = selectedNftMods.join(",");
-
-    let params = {};
-
-    if (peer)
-      params = {
-        peer,
-        offer: selectedNftsString,
-      };
-    else params = { offer: selectedNftsString };
-
-    router.push("/trade?" + new URLSearchParams(params).toString());
-  }, [selectedNfts]);
-
   return (
     <main className="h-screen">
       <div className="flex flex-col space-y-4 lg:items-center lg:space-y-0 lg:flex-row lg:justify-between">
         <Header>Inventory</Header>
-        {selectedNfts.size > 0 && (
-          <button
-            onClick={createTrade}
-            className="inline-flex items-center justify-center w-full h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-48 hover:bg-primary hover:border-none"
-          >
-            Create Trade
-          </button>
-        )}
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center h-[90vh]">
@@ -88,11 +41,7 @@ const Inventory = () => {
           ) : (
             <div className="grid grid-cols-2 gap-4 mt-4 lg:mt-0 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {nfts?.map((nft) => (
-                <MediaView
-                  nft={nft}
-                  onClick={() => selectNft(nft)}
-                  selected={selectedNfts.has(getNftMod(nft))}
-                />
+                <MediaView nft={nft} onClick={() => {}} selected={false} />
               ))}
             </div>
           )}

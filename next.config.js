@@ -8,11 +8,6 @@ module.exports = {
         destination: "/trade",
         permanent: false,
       },
-      {
-        source: "/link/:addr",
-        destination: "/trade?peer=:addr",
-        permanent: true,
-      },
     ];
   },
 };

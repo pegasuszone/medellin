@@ -1,4 +1,3 @@
-import { capitalize } from "lodash";
 import { Header, MediaView, LogoSpinner, Empty } from "components";
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { useStargazeClient, useWallet } from "client";
@@ -13,6 +12,7 @@ import { useTx } from "contexts/tx";
 import { ShortUrl } from "@prisma/client";
 import useToaster, { ToastTypes } from "hooks/useToaster";
 import { classNames } from "util/css";
+import { fetchNfts } from "util/nft";
 
 enum SelectTarget {
   User,
@@ -123,6 +123,79 @@ const Trade = () => {
   const toaster = useToaster();
   const router = useRouter();
 
+  const { peer: queryPeer, offer: queryOfferedNfts } = router.query;
+
+  // Querystring manipulation
+  useEffect(() => {
+    if (!queryPeer) return;
+
+    const peer = queryPeer as string;
+
+    // Is it a bech32 address?
+    try {
+      fromBech32(peer);
+      setPeerAddress(peer);
+    } catch {
+      // If not, maybe it's a shorturl?
+      fetch("/api/shorturl?path=" + peer)
+        .then((res) => {
+          if (!res.ok) {
+            // At this point we know it can't be an address, so we remove it
+            router.push({ pathname: "/trade", query: {} });
+          }
+          return res.json();
+        })
+        .then((json) => {
+          // save the offer if it exists, if not don't include it
+          let query = queryOfferedNfts
+            ? {
+                peer: json.destination.replace("?peer=", "").split("&")[0],
+                offer: queryOfferedNfts,
+              }
+            : { peer: json.destination.replace("?peer=", "").split("&")[0] };
+
+          // If the shorturl exists, let's push it back as a bech32
+          router.push({
+            pathname: "/trade",
+            query,
+          });
+        });
+    }
+  }, [queryPeer]);
+
+  // Populate the selectedNfts if the `offer` querystring exists
+  useEffect(() => {
+    if (
+      !client?.cosmWasmClient ||
+      !queryPeer ||
+      !queryOfferedNfts ||
+      !wallet?.address
+    )
+      return;
+    const peer = queryPeer as string;
+    const offer = queryOfferedNfts as string;
+
+    if (!peer) return;
+
+    // Fetch nft data & select nfts
+    try {
+      fetchNfts(
+        offer.split(",").map((nft) => {
+          const [collection, token_id] = nft.split("-");
+          return { collection, token_id: parseInt(token_id) };
+        }),
+        client
+      ).then((nfts) =>
+        nfts.forEach((nft) => {
+          console.log(getNftMod(nft));
+          selectNft(SelectTarget.Peer, nft);
+        })
+      );
+    } catch {
+      router.push("/trade");
+    }
+  }, [client?.cosmWasmClient, queryPeer, queryOfferedNfts, wallet?.address]);
+
   const [currentTab, setCurrentTab] = useState<Tab>("user");
 
   const [userNfts, setUserNfts] = useState<Media[]>();
@@ -185,7 +258,7 @@ const Trade = () => {
     }
   }, [currentTab, isLoadingPeerNfts, isLoadingUserNfts]);
 
-  const selectNft = (target: SelectTarget, nft: any) => {
+  const selectNft = (target: SelectTarget, nft: Media) => {
     switch (target) {
       case SelectTarget.User:
         switch (selectedUserNfts.has(getNftMod(nft))) {
@@ -225,6 +298,9 @@ const Trade = () => {
           break;
       }
 
+      if (selectedPeerNfts.has(getNftMod(nft))) target = SelectTarget.Peer;
+      if (selectedUserNfts.has(getNftMod(nft))) target = SelectTarget.User;
+
       selectNft(target, nft);
     },
     [currentTab, selectNft]
@@ -245,7 +321,11 @@ const Trade = () => {
   const copyTradeUrl = useCallback(async () => {
     if (wallet) {
       // This can include a pre-selected array of nfts
-      const tradePath = "?peer=" + wallet?.address;
+      const tradePath =
+        "?" +
+        new URLSearchParams({
+          peer: wallet?.address,
+        }).toString();
 
       // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
       const shortUrl: ShortUrl = await fetch("/api/shorturl", {
@@ -274,7 +354,7 @@ const Trade = () => {
       setCopiedTradeUrl(true);
       setTimeout(() => setCopiedTradeUrl(false), 2000);
     }
-  }, [wallet, setCopiedTradeUrl]);
+  }, [wallet, setCopiedTradeUrl, selectedUserNfts]);
 
   const handleSendOffer = useCallback(async () => {
     if (!peerAddress) return;
@@ -410,7 +490,7 @@ const Trade = () => {
           <div>
             <p className="text-xl font-medium">Your Items</p>
             <p className="font-medium text-white/75">
-              They will receieve these items...
+              They will receive these items...
             </p>
             <div className="lg:h-[28vh] mt-4">
               <Inventory
@@ -428,7 +508,7 @@ const Trade = () => {
           <div>
             <p className="text-xl font-medium">Their Items</p>
             <p className="font-medium text-white/75">
-              You will receieve these items...
+              You will receive these items...
             </p>
             <div className="lg:h-[28vh] mt-4">
               <Inventory
