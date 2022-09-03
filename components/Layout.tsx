@@ -18,10 +18,10 @@ export default function Layout({ children }: { children: ReactNode }) {
   const connectedNavigation = wallet
     ? [
         {
-          name: "Trade",
-          href: "/trade",
-          icon: ArrowsUpDownIcon,
-          current: router.asPath.split("/").includes("trade"),
+          name: "Inbox",
+          href: "/inbox",
+          icon: InboxStackIcon,
+          current: router.asPath.split("/").includes("inbox"),
         },
         {
           name: "Sent Offers",
@@ -40,10 +40,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const navigation = [
     {
-      name: "Inbox",
-      href: "/inbox",
-      icon: InboxStackIcon,
-      current: router.asPath.split("/").includes("inbox"),
+      name: "Trade",
+      href: "/trade",
+      icon: ArrowsUpDownIcon,
+      current: router.asPath.split("/").includes("trade"),
     },
     ...connectedNavigation,
   ];
