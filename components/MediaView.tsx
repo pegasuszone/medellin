@@ -5,10 +5,12 @@ export default function MediaView({
   nft,
   onClick,
   selected,
+  small,
 }: {
   nft: Media;
   onClick: () => void;
   selected: boolean;
+  small?: boolean;
 }) {
   return (
     <a
@@ -18,10 +20,23 @@ export default function MediaView({
         "px-5 py-4 border rounded-lg border-white/10 cursor-pointer grow-0 shrink-0"
       )}
     >
-      <img src={nft.image} className="rounded-md" />
+      <img src={nft.image} className={"rounded-md aspect-1"} />
       <div className="mt-2.5">
-        <p className="text-lg font-semibold text-white">{nft.name}</p>
-        <p className="text-white/75">{nft.collection.name}</p>
+        <p
+          className={classNames(
+            small ? "text-sm font-medium" : "text-lg font-semibold leading-snug"
+          )}
+        >
+          {nft.name}
+        </p>
+        <p
+          className={classNames(
+            small ? "text-xs" : "text-base",
+            "text-white/75"
+          )}
+        >
+          {nft.collection.name}
+        </p>
       </div>
     </a>
   );

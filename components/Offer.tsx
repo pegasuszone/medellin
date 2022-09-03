@@ -1,4 +1,5 @@
 import { useStargazeClient, useWallet } from "client";
+import dynamic from "next/dynamic";
 import React, { useEffect, useState, useCallback, SVGProps } from "react";
 import { Offer } from "types/contract";
 import { fetchNfts, getNFTLink } from "util/nft";
@@ -14,11 +15,10 @@ import { toUtf8 } from "@cosmjs/encoding";
 import { CONTRACT_ADDRESS } from "util/constants";
 import { useTx } from "contexts/tx";
 import { useRouter } from "next/router";
-import {
-  CheckCircleIcon,
-  QuestionMarkCircleIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import useToaster, { ToastTypes } from "hooks/useToaster";
+
+const Countdown = dynamic(() => import("react-countdown"));
 
 type ReplyType = "accept" | "reject" | "counteroffer";
 
@@ -92,11 +92,14 @@ export default function OfferView({
   const router = useRouter();
 
   const { tx } = useTx();
+  const toaster = useToaster();
 
   const [offeredNfts, setOfferedNfts] = useState<Media[]>();
   const [wantedNfts, setWantedNfts] = useState<Media[]>();
 
   const [isLoading, setIsLoading] = useState<boolean>();
+
+  const [isExpired, setIsExpired] = useState<boolean>(false);
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState<boolean>(false);
   const handleDetailsModal = useCallback((val: boolean) => {
@@ -107,6 +110,11 @@ export default function OfferView({
   const handleReplyModal = useCallback((val: boolean) => {
     setIsReplyModalOpen(val);
     if (!val) setSelectedReply(undefined);
+  }, []);
+
+  const [isRetractModalOpen, setIsRetractModalOpen] = useState<boolean>(false);
+  const handleRetractModal = useCallback((val: boolean) => {
+    setIsRetractModalOpen(val);
   }, []);
 
   const [selectedReply, setSelectedReply] = useState<ReplyType>();
@@ -132,7 +140,6 @@ export default function OfferView({
   // Handle reply message
   const handleReply = useCallback(
     (reply: ReplyType) => {
-      console.log(reply);
       if (!wantedNfts) return;
 
       let msg;
@@ -191,6 +198,83 @@ export default function OfferView({
       );
     },
     [tx, wantedNfts, offer]
+  );
+
+  // Handle retracting the offer & authorization to the contract
+  const handleRetract = useCallback(() => {
+    if (!offeredNfts) return;
+
+    const msg = { remove_offer: { id: offer.id } };
+
+    const wasmMsg = {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: wallet?.address,
+        msg: toUtf8(JSON.stringify(msg)),
+        contract: CONTRACT_ADDRESS,
+      }),
+    };
+
+    const msgs = [
+      ...offeredNfts.map((nft) => {
+        return {
+          typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+          value: MsgExecuteContract.fromPartial({
+            sender: wallet?.address,
+            msg: toUtf8(
+              JSON.stringify({
+                revoke: {
+                  spender: CONTRACT_ADDRESS,
+                  token_id: String(nft.tokenId),
+                },
+              })
+            ),
+            contract: String(nft.collection.contractAddress),
+          }),
+        };
+      }),
+      wasmMsg,
+    ];
+
+    tx(
+      msgs,
+      {
+        gas: 1499999,
+      },
+      () => {
+        actionCallback();
+      }
+    );
+  }, [tx, wantedNfts, offer]);
+
+  // Countdown renderer
+  const renderer = useCallback(
+    ({
+      days,
+      hours,
+      minutes,
+      seconds,
+    }: {
+      days: number;
+      hours: number;
+      minutes: number;
+      seconds: number;
+    }) => {
+      if (!offer) return;
+      // Render a countdown
+      return (
+        <span>
+          {days > 1 && <>{days}d </>}
+          {hours > 1 && <>{hours}h </>}
+          {hours < 1 && (
+            <>
+              {minutes > 1 && <>{minutes}m</>} {seconds > 1 && <>{seconds}s</>}
+            </>
+          )}
+        </span>
+      );
+    },
+    [offer]
   );
 
   return (
@@ -316,11 +400,34 @@ export default function OfferView({
           </div>
         </RadioGroup>
       </Modal>
+      <Modal
+        actions={[
+          {
+            name: "Confirm Retraction",
+            type: "primary",
+            action: () => {
+              handleRetract();
+            },
+          },
+          { name: "Cancel", type: "secondary", action: () => {} },
+        ]}
+        open={isRetractModalOpen}
+        handleStateChange={handleRetractModal}
+      >
+        <p className="-mt-1 text-2xl font-bold">Retract Offer</p>
+        <p className="mt-3 mb-4 text-sm text-white/75">
+          Before you retract this offer, be advised that{" "}
+          <b>retracting an offer is final</b> and will remove it from the inbox
+          of the user you've sent it to.
+        </p>
+      </Modal>
       <div className="flex flex-col p-4 border rounded-lg border-white/10">
+        {/* Desktop address view */}
         <div className="hidden grid-cols-2 gap-12 xl:grid">
-          <Address address={offer.sender} copy />
-          <Address address={offer.peer} />
+          <Address address={offer.sender} copy={isPeer} />
+          <Address address={offer.peer} copy={isSender} />
         </div>
+        {/* Desktop NFT view */}
         <div className="hidden grid-cols-2 gap-12 mt-4 xl:grid">
           <div className="flex flex-row space-x-4">
             {offeredNfts?.slice(0, 1).map((nft) => (
@@ -343,25 +450,87 @@ export default function OfferView({
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 pt-4 mt-4 border-t border-white/10">
-          <div className="flex items-center">
-            <p className="font-medium text-white/75">
-              Offer expires 12-24-2022
-            </p>
+        {/* Mobile view */}
+        <div className="lg:hidden">
+          <Address address={offer.sender} copy={isPeer} />
+          <div className="flex flex-row mt-2 space-x-2">
+            {offeredNfts?.slice(0, 1).map((nft) => (
+              <OfferNft nft={nft} />
+            ))}
+            {(offeredNfts?.length || 0) > 1 && (
+              <div className="flex items-center justify-center flex-shrink-0 w-24 h-24 text-sm border rounded-md text-white/50 border-white/10">
+                +{offeredNfts!.length - 1}
+              </div>
+            )}
           </div>
-          <div className="space-x-4 lg:flex lg:flex-row lg:justify-end lg:items-center">
+        </div>
+        <div className="mt-4 lg:hidden">
+          <Address address={offer.peer} copy={isSender} />
+          <div className="flex flex-row mt-2 space-x-2">
+            {wantedNfts?.slice(0, 1).map((nft) => (
+              <OfferNft nft={nft} />
+            ))}
+            {(wantedNfts?.length || 0) > 1 && (
+              <div className="flex items-center justify-center flex-shrink-0 w-24 h-24 text-sm border rounded-md text-white/50 border-white/10">
+                +{wantedNfts!.length - 1}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="pt-4 mt-4 border-t lg:grid lg:grid-cols-2 border-white/10">
+          <div className="flex items-center">
+            {!isExpired ? (
+              <p className="font-medium text-white/75">
+                Offer expires in{" "}
+                <span className="font-semibold text-white">
+                  <Countdown
+                    date={new Date(parseInt(offer?.expires_at!) / 1000000)}
+                    renderer={renderer}
+                    onComplete={() => {
+                      setIsExpired(true);
+                    }}
+                  />
+                </span>
+              </p>
+            ) : (
+              <p className="font-semibold text-red-500">Offer is expired</p>
+            )}
+          </div>
+          <div className="flex flex-col mt-4 space-y-2 lg:mt-0 lg:space-x-4 lg:space-y-0 lg:flex-row lg:justify-end lg:items-center">
             <button
               onClick={() => setIsDetailsModalOpen(true)}
               className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-32 hover:bg-primary hover:border-none"
             >
               Details
             </button>
-            <button
-              onClick={() => setIsReplyModalOpen(true)}
-              className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
-            >
-              Reply
-            </button>
+            {isPeer && (
+              <button
+                onClick={() => {
+                  if (isExpired) {
+                    return toaster.toast({
+                      type: ToastTypes.Error,
+                      title: "Cannot reply to expired offer",
+                      message:
+                        "This offer has expired and therefore cannot be replied to. The sender of the offer must renew it before you can reply to it.",
+                    });
+                  }
+                  setIsReplyModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
+              >
+                Reply
+              </button>
+            )}
+            {isSender && (
+              <button
+                onClick={() => {
+                  setIsRetractModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
+              >
+                Retract
+              </button>
+            )}
           </div>
         </div>
       </div>

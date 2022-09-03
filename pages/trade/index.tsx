@@ -1,6 +1,6 @@
 import { capitalize } from "lodash";
-import { Header, MediaView, LogoSpinner } from "components";
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { Header, MediaView, LogoSpinner, Empty } from "components";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { useStargazeClient, useWallet } from "client";
 import copy from "copy-to-clipboard";
 import { queryInventory } from "client/query";
@@ -57,23 +57,61 @@ const tabs: {
   },
 ];
 
+function none() {}
 const Inventory = ({
   nfts,
   handleClick,
+  small,
+  isLoading,
+  input,
+  inputPlaceholder,
+  inputOnChange,
 }: {
   nfts: Media[];
   handleClick: (nft: Media) => void;
+  small?: boolean;
+  isLoading: boolean;
+  input?: boolean;
+  inputPlaceholder?: string;
+  inputOnChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => (
   <div className="h-full p-4 overflow-y-scroll border rounded-lg border-white/10">
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
-      {nfts.map((nft) => (
-        <MediaView
-          nft={nft}
-          onClick={() => handleClick(nft)}
-          selected={false}
-        />
-      ))}
-    </div>
+    {isLoading ? (
+      <div className="flex items-center justify-center h-full">
+        <LogoSpinner />
+      </div>
+    ) : (
+      <>
+        {input && (
+          <input
+            className="border w-full bg-firefly mb-4 rounded-lg border-white/10 focus:ring focus:ring-primary ring-offset-firefly px-4 py-2.5 text-white"
+            placeholder={inputPlaceholder}
+            onChange={inputOnChange || none}
+          />
+        )}
+        {nfts.length < 1 ? (
+          <div className="flex items-center justify-center h-full">
+            <Empty small={small} />
+          </div>
+        ) : (
+          <div
+            className={classNames(
+              small ? "lg:grid-cols-3 2xl:grid-cols-4" : "2xl:grid-cols-3",
+              "grid grid-cols-2 gap-2"
+            )}
+          >
+            {nfts.map((nft) => (
+              <MediaView
+                nft={nft}
+                onClick={() => handleClick(nft)}
+                selected={false}
+                small={small}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    )}
   </div>
 );
 
@@ -105,7 +143,7 @@ const Trade = () => {
     }
   }, [peerAddress]);
 
-  const selectedUserNfts = useMemo(() => new Map<Mod, Media>(), []);
+  const selectedUserNfts = useMemo(() => new Map<Mod, Media>(), [wallet]);
   const [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter] =
     useState<number>(0);
   const refreshSelectedUserNfts = useCallback(
@@ -113,7 +151,7 @@ const Trade = () => {
     [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
   );
 
-  const selectedPeerNfts = useMemo(() => new Map<Mod, Media>(), []);
+  const selectedPeerNfts = useMemo(() => new Map<Mod, Media>(), [wallet]);
   const [selectedPeerNftsRefreshCounter, setSelectedPeerNftsRefreshCounter] =
     useState<number>(0);
   const refreshSelectedPeerNfts = useCallback(
@@ -137,6 +175,15 @@ const Trade = () => {
     selectedUserNftsRefreshCounter,
     selectedPeerNftsRefreshCounter,
   ]);
+
+  const isLoadingCurrentTab = useMemo(() => {
+    switch (currentTab) {
+      case "peer":
+        return isLoadingPeerNfts;
+      case "user":
+        return isLoadingUserNfts;
+    }
+  }, [currentTab, isLoadingPeerNfts, isLoadingUserNfts]);
 
   const selectNft = (target: SelectTarget, nft: any) => {
     switch (target) {
@@ -177,8 +224,6 @@ const Trade = () => {
           target = SelectTarget.Peer;
           break;
       }
-
-      console.log(target, nft);
 
       selectNft(target, nft);
     },
@@ -317,7 +362,7 @@ const Trade = () => {
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-8 mt-6 lg:grid-cols-2 lg:mt-0">
+      <div className="grid grid-cols-1 gap-8 mt-6 lg:grid-cols-2">
         <div>
           <div className="grid grid-cols-1 gap-2 mb-4 lg:grid-cols-2">
             {tabs.map((tab) => (
@@ -330,8 +375,34 @@ const Trade = () => {
           </div>
           <div className="lg:h-[75vh]">
             <Inventory
+              isLoading={isLoadingCurrentTab}
               nfts={inventoryNfts || []}
               handleClick={handleInventoryItemClick}
+              input={currentTab === "peer"}
+              inputPlaceholder="Enter peer address..."
+              inputOnChange={(e) => {
+                const address = e.currentTarget.value;
+
+                if (address === "") setPeerAddress(undefined);
+
+                // Verify that the address is valid
+                try {
+                  fromBech32(address);
+                } catch {
+                  return;
+                }
+
+                if (address === wallet?.address) {
+                  return toaster.toast({
+                    title: "You cannot trade with yourself",
+                    message:
+                      "Enter an address that is not your own to view a peer inventory.",
+                    type: ToastTypes.Warning,
+                  });
+                }
+
+                setPeerAddress(address);
+              }}
             />
           </div>
         </div>
@@ -339,62 +410,46 @@ const Trade = () => {
           <div>
             <p className="text-xl font-medium">Your Items</p>
             <p className="font-medium text-white/75">
-              Once the trade is completed, they will receieve these items:
+              They will receieve these items...
             </p>
-            <div className="h-full mt-4">
+            <div className="lg:h-[28vh] mt-4">
               <Inventory
+                isLoading={false}
                 nfts={
                   userNfts?.filter((nft) =>
                     selectedUserNfts.has(getNftMod(nft))
                   ) || []
                 }
                 handleClick={handleInventoryItemClick}
+                small
               />
             </div>
           </div>
           <div>
             <p className="text-xl font-medium">Their Items</p>
             <p className="font-medium text-white/75">
-              Once the trade is completed, you will receieve these items:
+              You will receieve these items...
             </p>
-            <div className="h-full mt-4">
+            <div className="lg:h-[28vh] mt-4">
               <Inventory
+                isLoading={false}
                 nfts={
                   peerNfts?.filter((nft) =>
                     selectedPeerNfts.has(getNftMod(nft))
                   ) || []
                 }
                 handleClick={handleInventoryItemClick}
+                small
               />
             </div>
           </div>
-          {/* <button
+          <button
             onClick={handleSendOffer}
             className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
           >
             Send Trade Offer
-          </button> */}
+          </button>
         </div>
-      </div>
-      <div className="mt-8 lg:flex lg:flex-row lg:justify-between lg:items-center">
-        <input
-          className="border w-full lg:w-96 bg-firefly rounded-lg border-white/10 focus:ring focus:ring-primary ring-offset-firefly px-4 py-2.5 text-white"
-          placeholder="Enter peer address..."
-          onChange={(e) => {
-            try {
-              fromBech32(e.currentTarget.value);
-              setPeerAddress(e.currentTarget.value);
-            } catch {
-              if (!e.currentTarget.value) setPeerAddress(undefined);
-            }
-          }}
-        />
-        <button
-          onClick={handleSendOffer}
-          className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
-        >
-          Send Trade Offer
-        </button>
       </div>
     </main>
   );

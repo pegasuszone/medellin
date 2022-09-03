@@ -5,7 +5,7 @@ module.exports = {
     return [
       {
         source: "/",
-        destination: "/inbox",
+        destination: "/trade",
         permanent: false,
       },
       {

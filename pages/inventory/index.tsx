@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useWallet } from "client";
 import { queryInventory } from "client/query";
-import { Header, MediaView } from "components";
+import { Header, MediaView, LogoSpinner, Empty } from "components";
 import { Media, Mod, getNftMod } from "util/type";
 import { useRouter } from "next/router";
 
@@ -69,24 +69,34 @@ const Inventory = () => {
         {selectedNfts.size > 0 && (
           <button
             onClick={createTrade}
-            className="inline-flex items-center justify-center w-48 h-10 text-xs font-medium text-white border border-white rounded-lg hover:bg-primary hover:border-none"
+            className="inline-flex items-center justify-center w-full h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-48 hover:bg-primary hover:border-none"
           >
             Create Trade
           </button>
         )}
       </div>
       {isLoading ? (
-        <p className="text-white">Loading...</p>
-      ) : (
-        <div className="grid grid-cols-5 gap-4">
-          {nfts?.map((nft) => (
-            <MediaView
-              nft={nft}
-              onClick={() => selectNft(nft)}
-              selected={selectedNfts.has(getNftMod(nft))}
-            />
-          ))}
+        <div className="flex items-center justify-center h-[90vh]">
+          <LogoSpinner />
         </div>
+      ) : (
+        <>
+          {(nfts?.length || 0) < 1 ? (
+            <div className="flex items-center justify-center h-[90vh]">
+              <Empty />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 mt-4 lg:mt-0 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {nfts?.map((nft) => (
+                <MediaView
+                  nft={nft}
+                  onClick={() => selectNft(nft)}
+                  selected={selectedNfts.has(getNftMod(nft))}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
       {!wallet && (
         <p className="text-lg font-light text-white">

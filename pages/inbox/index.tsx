@@ -1,5 +1,5 @@
 import { useStargazeClient, useWallet } from "client";
-import { Header } from "components";
+import { Empty, Header, LogoSpinner } from "components";
 import OfferView from "components/Offer";
 import { useCallback, useEffect, useState } from "react";
 import { Offer } from "types/contract";
@@ -42,11 +42,25 @@ const Inbox = () => {
           Connect a wallet to access your inbox.
         </p>
       )}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {offers?.map((offer) => (
-          <OfferView offer={offer} actionCallback={refresh} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-[90vh]">
+          <LogoSpinner />
+        </div>
+      ) : (
+        <>
+          {(offers?.length || 0) < 1 ? (
+            <div className="flex items-center justify-center h-[90vh]">
+              <Empty />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
+              {offers?.map((offer) => (
+                <OfferView offer={offer} actionCallback={refresh} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </main>
   );
 };

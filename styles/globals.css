@@ -3,6 +3,5 @@
 @tailwind utilities;
 
 .grid-trade-custom {
-  /* grid-template-rows: 1fr 1fr 0.1fr; */
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 0.1fr;
 }
