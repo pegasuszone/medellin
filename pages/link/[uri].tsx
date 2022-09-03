@@ -14,7 +14,7 @@ const Link = () => {
     fetch("/api/shorturl?path=" + uri)
       .then((res) => {
         console.log(res);
-        if (!res.ok) router.push("/");
+        if (!res.ok) router.push("/trade");
         return res.json();
       })
       .then((json) => {
