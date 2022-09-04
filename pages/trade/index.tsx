@@ -131,6 +131,8 @@ const Trade = () => {
 
     const peer = queryPeer as string;
 
+    if (!peer) return;
+
     // Is it a bech32 address?
     try {
       fromBech32(peer);
