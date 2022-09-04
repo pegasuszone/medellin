@@ -187,12 +187,13 @@ const Trade = () => {
           return { collection, token_id: parseInt(token_id) };
         }),
         client
-      ).then((nfts) =>
+      ).then((nfts) => {
+        if (!nfts) return router.push("/trade");
         nfts.forEach((nft) => {
           console.log(getNftMod(nft));
           selectNft(SelectTarget.Peer, nft);
-        })
-      );
+        });
+      });
     } catch {
       router.push("/trade");
     }
