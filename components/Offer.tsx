@@ -122,10 +122,14 @@ export default function OfferView({
   // Fetch wanted & offered nfts
   useEffect(() => {
     if (wallet && client) {
-      fetchNfts(offer.offered_nfts, client).then((nfts) =>
-        setOfferedNfts(nfts)
-      );
-      fetchNfts(offer.wanted_nfts, client).then((nfts) => setWantedNfts(nfts));
+      fetchNfts(offer.offered_nfts, client).then((nfts) => {
+        if (!nfts) return;
+        setOfferedNfts(nfts);
+      });
+      fetchNfts(offer.wanted_nfts, client).then((nfts) => {
+        if (!nfts) return;
+        setWantedNfts(nfts);
+      });
     }
   }, [wallet, client]);
 

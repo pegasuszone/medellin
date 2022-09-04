@@ -8,14 +8,20 @@ import dJSON from "dirty-json";
 export async function fetchNfts(
   tokens: Token[],
   client: StargazeClient
-): Promise<Media[]> {
-  const data = tokens.map((nft) => {
-    return client?.nfts
-      .getOne({ collectionAddress: nft.collection, tokenId: nft.token_id })
-      .then((data) => {
-        return data;
-      });
-  });
+): Promise<Media[] | null> {
+  let data;
+  try {
+    data = tokens.map((nft) => {
+      return client?.nfts
+        .getOne({ collectionAddress: nft.collection, tokenId: nft.token_id })
+        .then((data) => {
+          return data;
+        });
+    });
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 
   const nfts = await Promise.all(data);
   return nfts;
