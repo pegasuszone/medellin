@@ -18,10 +18,10 @@ export default function Layout({ children }: { children: ReactNode }) {
   const connectedNavigation = wallet
     ? [
         {
-          name: "Trade",
-          href: "/trade",
-          icon: ArrowsUpDownIcon,
-          current: router.asPath.split("/").includes("trade"),
+          name: "Inbox",
+          href: "/inbox",
+          icon: InboxStackIcon,
+          current: router.asPath.split("/").includes("inbox"),
         },
         {
           name: "Sent Offers",
@@ -40,10 +40,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const navigation = [
     {
-      name: "Inbox",
-      href: "/inbox",
-      icon: InboxStackIcon,
-      current: router.asPath.split("/").includes("inbox"),
+      name: "Trade",
+      href: "/trade",
+      icon: ArrowsUpDownIcon,
+      current: router.asPath.split("/").includes("trade"),
     },
     ...connectedNavigation,
   ];
@@ -54,9 +54,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         <MetaTags
           title="Pegasus"
           description="P2P trading platform for Stargaze NFTs"
-          image="https://raw.githubusercontent.com/public-awesome/staking-ui/stargaze/public/TwitterCard.png"
-          ogImage="https://raw.githubusercontent.com/public-awesome/staking-ui/stargaze/public/OGImage1200x630.png"
-          url="https://www.stargaze.zone"
+          image="https://user-images.githubusercontent.com/25516960/186937317-b16cc010-fa80-4a5e-a3bb-45e2413242df.png"
+          ogImage="https://user-images.githubusercontent.com/25516960/186937317-b16cc010-fa80-4a5e-a3bb-45e2413242df.png"
+          url="https://www.pegasus-trade.zone"
         />
         <Navigation navigation={navigation} />
         <div className="px-8 lg:ml-64">{children}</div>

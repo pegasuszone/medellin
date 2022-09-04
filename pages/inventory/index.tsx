@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useWallet } from "client";
 import { queryInventory } from "client/query";
 import { Header, MediaView, LogoSpinner, Empty } from "components";
-import { Media, Mod, getNftMod } from "util/type";
-import { useRouter } from "next/router";
+import { Media } from "util/type";
 
 const Inventory = () => {
   const { wallet } = useWallet();
-  const router = useRouter();
 
   const [nfts, setNfts] = useState<Media[]>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -16,7 +14,6 @@ const Inventory = () => {
     if (wallet) {
       setIsLoading(true);
       queryInventory(wallet?.address).then((inventory) => {
-        console.log(inventory);
         setNfts(inventory);
         setIsLoading(false);
       });

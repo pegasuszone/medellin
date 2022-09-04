@@ -36,10 +36,10 @@ const TabItem = ({
     onClick={() => handleClick(id)}
     className={classNames(
       current ? "bg-firefly-700" : "bg-firefly hover:bg-firefly-800",
-      "inline-flex py-1.5 px-2 cursor-pointer items-center justify-center w-full border rounded-md border-white/10"
+      "inline-flex py-2.5 px-2 cursor-pointer items-center justify-center w-full border rounded-md border-white/10"
     )}
   >
-    <p className="text-lg font-medium text-white">{name}</p>
+    <p className="text-base font-medium text-white">{name}</p>
   </a>
 );
 
