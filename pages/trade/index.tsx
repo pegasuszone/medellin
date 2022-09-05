@@ -133,6 +133,9 @@ const Trade = () => {
 
     if (!peer) return;
 
+    // If the peer is the user, remove it from the querystring
+    if (peer === wallet?.address) router.push("/trade");
+
     // Is it a bech32 address?
     try {
       fromBech32(peer);
@@ -148,13 +151,18 @@ const Trade = () => {
           return res.json();
         })
         .then((json) => {
+          const peer = json.destination.replace("?peer=", "").split("&")[0];
+
+          // If the peer is the user, remove it from the querystring
+          if (peer === wallet?.address) router.push("/trade");
+
           // save the offer if it exists, if not don't include it
           let query = queryOfferedNfts
             ? {
-                peer: json.destination.replace("?peer=", "").split("&")[0],
+                peer,
                 offer: queryOfferedNfts,
               }
-            : { peer: json.destination.replace("?peer=", "").split("&")[0] };
+            : { peer };
 
           // If the shorturl exists, let's push it back as a bech32
           router.push({
