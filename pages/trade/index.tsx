@@ -140,6 +140,7 @@ const Trade = () => {
     try {
       fromBech32(peer);
       setPeerAddress(peer);
+      setCurrentTab("peer");
     } catch {
       // If not, maybe it's a shorturl?
       fetch("/api/shorturl?path=" + peer)
