@@ -171,7 +171,7 @@ const Trade = () => {
           });
         });
     }
-  }, [queryPeer]);
+  }, [queryPeer, wallet?.address]);
 
   // Populate the selectedNfts if the `offer` querystring exists
   useEffect(() => {
