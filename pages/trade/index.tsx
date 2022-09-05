@@ -454,7 +454,7 @@ const Trade = () => {
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-8 mt-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 mt-3 mb-4 lg:mb-0 lg:mt-4 2xl:mt-6 lg:grid-cols-2">
         <div>
           <div className="grid grid-cols-1 gap-2 mb-4 lg:grid-cols-2">
             {tabs.map((tab) => (
@@ -537,7 +537,7 @@ const Trade = () => {
           </div>
           <button
             onClick={handleSendOffer}
-            className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
+            className="inline-flex items-center justify-center w-full px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
           >
             Send Trade Offer
           </button>
