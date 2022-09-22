@@ -432,7 +432,7 @@ const Trade = () => {
       wasmMsg,
     ]
 
-    tx(msgs, { gas: 149999 }, () => {
+    tx(msgs, { gas: 1499999 }, () => {
       router.push('/sent')
     })
   }, [
