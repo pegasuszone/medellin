@@ -1,45 +1,45 @@
-import { useStargazeClient, useWallet } from "client";
-import dynamic from "next/dynamic";
-import React, { useEffect, useState, useCallback, SVGProps } from "react";
-import { Offer } from "types/contract";
-import { fetchNfts, getNFTLink } from "util/nft";
-import { getNftMod, Media } from "util/type";
-import Address from "./Address";
-import ReactTooltip from "@huner2/react-tooltip";
-import { Modal } from "./Modal";
-import { VerticalMediaView } from "./MediaView";
-import { classNames } from "util/css";
-import { RadioGroup } from "@headlessui/react";
-import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
-import { toUtf8 } from "@cosmjs/encoding";
-import { CONTRACT_ADDRESS } from "util/constants";
-import { useTx } from "contexts/tx";
-import { useRouter } from "next/router";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
-import useToaster, { ToastTypes } from "hooks/useToaster";
+import { useStargazeClient, useWallet } from 'client'
+import dynamic from 'next/dynamic'
+import React, { useEffect, useState, useCallback, SVGProps } from 'react'
+import { Offer } from 'types/contract'
+import { fetchNfts, getNFTLink } from 'util/nft'
+import { getNftMod, Media } from 'util/type'
+import Address from './Address'
+import ReactTooltip from '@huner2/react-tooltip'
+import { Modal } from './Modal'
+import { VerticalMediaView } from './MediaView'
+import { classNames } from 'util/css'
+import { RadioGroup } from '@headlessui/react'
+import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
+import { toUtf8 } from '@cosmjs/encoding'
+import { CONTRACT_ADDRESS } from 'util/constants'
+import { useTx } from 'contexts/tx'
+import { useRouter } from 'next/router'
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import useToaster, { ToastTypes } from 'hooks/useToaster'
 
-const Countdown = dynamic(() => import("react-countdown"));
+const Countdown = dynamic(() => import('react-countdown'))
 
-type ReplyType = "accept" | "reject" | "counteroffer";
+type ReplyType = 'accept' | 'reject' | 'counteroffer'
 
 interface Reply {
-  name: string;
-  description: string;
-  type: ReplyType;
-  icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
+  name: string
+  description: string
+  type: ReplyType
+  icon: (props: SVGProps<SVGSVGElement>) => JSX.Element
 }
 
 const replies = [
   {
-    name: "Accept",
-    description: "Accept the offer and complete the trade.",
-    type: "accept",
+    name: 'Accept',
+    description: 'Accept the offer and complete the trade.',
+    type: 'accept',
     icon: CheckCircleIcon,
   },
   {
-    name: "Reject",
-    description: "Reject the offer, nothing happens.",
-    type: "reject",
+    name: 'Reject',
+    description: 'Reject the offer, nothing happens.',
+    type: 'reject',
     icon: XCircleIcon,
   },
   // {
@@ -48,7 +48,7 @@ const replies = [
   //   type: "counteroffer",
   //   icon: QuestionMarkCircleIcon,
   // },
-];
+]
 
 const OfferNft = ({ nft }: { nft: Media }) => {
   return (
@@ -74,105 +74,105 @@ const OfferNft = ({ nft }: { nft: Media }) => {
         data-tip={nft.name}
       />
     </a>
-  );
-};
+  )
+}
 
 export default function OfferView({
   offer,
   actionCallback,
 }: {
-  offer: Offer;
-  actionCallback: () => void;
+  offer: Offer
+  actionCallback: () => void
 }) {
-  const { wallet } = useWallet();
-  const { client } = useStargazeClient();
-  const isSender = offer.sender === wallet?.address;
-  const isPeer = offer.peer === wallet?.address;
+  const { wallet } = useWallet()
+  const { client } = useStargazeClient()
+  const isSender = offer.sender === wallet?.address
+  const isPeer = offer.peer === wallet?.address
 
-  const router = useRouter();
+  const router = useRouter()
 
-  const { tx } = useTx();
-  const toaster = useToaster();
+  const { tx } = useTx()
+  const toaster = useToaster()
 
-  const [offeredNfts, setOfferedNfts] = useState<Media[]>();
-  const [wantedNfts, setWantedNfts] = useState<Media[]>();
+  const [offeredNfts, setOfferedNfts] = useState<Media[]>()
+  const [wantedNfts, setWantedNfts] = useState<Media[]>()
 
-  const [isLoading, setIsLoading] = useState<boolean>();
+  const [isLoading, setIsLoading] = useState<boolean>()
 
-  const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [isExpired, setIsExpired] = useState<boolean>(false)
 
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState<boolean>(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState<boolean>(false)
   const handleDetailsModal = useCallback((val: boolean) => {
-    setIsDetailsModalOpen(val);
-  }, []);
+    setIsDetailsModalOpen(val)
+  }, [])
 
-  const [isReplyModalOpen, setIsReplyModalOpen] = useState<boolean>(false);
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState<boolean>(false)
   const handleReplyModal = useCallback((val: boolean) => {
-    setIsReplyModalOpen(val);
-    if (!val) setSelectedReply(undefined);
-  }, []);
+    setIsReplyModalOpen(val)
+    if (!val) setSelectedReply(undefined)
+  }, [])
 
-  const [isRetractModalOpen, setIsRetractModalOpen] = useState<boolean>(false);
+  const [isRetractModalOpen, setIsRetractModalOpen] = useState<boolean>(false)
   const handleRetractModal = useCallback((val: boolean) => {
-    setIsRetractModalOpen(val);
-  }, []);
+    setIsRetractModalOpen(val)
+  }, [])
 
-  const [selectedReply, setSelectedReply] = useState<ReplyType>();
+  const [selectedReply, setSelectedReply] = useState<ReplyType>()
 
   // Fetch wanted & offered nfts
   useEffect(() => {
     if (wallet && client) {
       fetchNfts(offer.offered_nfts, client).then((nfts) => {
-        if (!nfts) return;
-        setOfferedNfts(nfts);
-      });
+        if (!nfts) return
+        setOfferedNfts(nfts)
+      })
       fetchNfts(offer.wanted_nfts, client).then((nfts) => {
-        if (!nfts) return;
-        setWantedNfts(nfts);
-      });
+        if (!nfts) return
+        setWantedNfts(nfts)
+      })
     }
-  }, [wallet, client]);
+  }, [wallet, client])
 
   useEffect(() => {
     if (wantedNfts && offeredNfts) {
-      setIsLoading(false);
+      setIsLoading(false)
     } else if (!wantedNfts || !offeredNfts) {
-      setIsLoading(true);
+      setIsLoading(true)
     }
-  }, [wantedNfts, offeredNfts]);
+  }, [wantedNfts, offeredNfts])
 
   // Handle reply message
   const handleReply = useCallback(
     (reply: ReplyType) => {
-      if (!wantedNfts) return;
+      if (!wantedNfts) return
 
-      let msg;
+      let msg
 
       switch (reply) {
-        case "accept":
-          msg = { accept_offer: { id: offer.id } };
-          break;
-        case "reject":
-          msg = { reject_offer: { id: offer.id } };
-          break;
+        case 'accept':
+          msg = { accept_offer: { id: offer.id } }
+          break
+        case 'reject':
+          msg = { reject_offer: { id: offer.id } }
+          break
         default:
-          return;
+          return
       }
 
       const wasmMsg = {
-        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+        typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
         value: MsgExecuteContract.fromPartial({
           sender: wallet?.address,
           msg: toUtf8(JSON.stringify(msg)),
           contract: CONTRACT_ADDRESS,
         }),
-      };
+      }
 
       const msgs = [
-        ...(reply === "accept"
+        ...(reply === 'accept'
           ? wantedNfts.map((nft) => {
               return {
-                typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+                typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
                 value: MsgExecuteContract.fromPartial({
                   sender: wallet?.address,
                   msg: toUtf8(
@@ -181,15 +181,15 @@ export default function OfferView({
                         spender: CONTRACT_ADDRESS,
                         token_id: String(nft.tokenId),
                       },
-                    })
+                    }),
                   ),
                   contract: String(nft.collection.contractAddress),
                 }),
-              };
+              }
             })
           : []),
         wasmMsg,
-      ];
+      ]
 
       tx(
         msgs,
@@ -197,32 +197,32 @@ export default function OfferView({
           gas: 1499999,
         },
         () => {
-          actionCallback();
-        }
-      );
+          actionCallback()
+        },
+      )
     },
-    [tx, wantedNfts, offer]
-  );
+    [tx, wantedNfts, offer],
+  )
 
   // Handle retracting the offer & authorization to the contract
   const handleRetract = useCallback(() => {
-    if (!offeredNfts) return;
+    if (!offeredNfts) return
 
-    const msg = { remove_offer: { id: offer.id } };
+    const msg = { remove_offer: { id: offer.id } }
 
     const wasmMsg = {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
       value: MsgExecuteContract.fromPartial({
         sender: wallet?.address,
         msg: toUtf8(JSON.stringify(msg)),
         contract: CONTRACT_ADDRESS,
       }),
-    };
+    }
 
     const msgs = [
       ...offeredNfts.map((nft) => {
         return {
-          typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+          typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
           value: MsgExecuteContract.fromPartial({
             sender: wallet?.address,
             msg: toUtf8(
@@ -231,14 +231,14 @@ export default function OfferView({
                   spender: CONTRACT_ADDRESS,
                   token_id: String(nft.tokenId),
                 },
-              })
+              }),
             ),
             contract: String(nft.collection.contractAddress),
           }),
-        };
+        }
       }),
       wasmMsg,
-    ];
+    ]
 
     tx(
       msgs,
@@ -246,10 +246,10 @@ export default function OfferView({
         gas: 1499999,
       },
       () => {
-        actionCallback();
-      }
-    );
-  }, [tx, wantedNfts, offer]);
+        actionCallback()
+      },
+    )
+  }, [tx, wantedNfts, offer])
 
   // Countdown renderer
   const renderer = useCallback(
@@ -259,12 +259,12 @@ export default function OfferView({
       minutes,
       seconds,
     }: {
-      days: number;
-      hours: number;
-      minutes: number;
-      seconds: number;
+      days: number
+      hours: number
+      minutes: number
+      seconds: number
     }) => {
-      if (!offer) return;
+      if (!offer) return
       // Render a countdown
       return (
         <span>
@@ -276,10 +276,10 @@ export default function OfferView({
             </>
           )}
         </span>
-      );
+      )
     },
-    [offer]
-  );
+    [offer],
+  )
 
   return (
     <>
@@ -291,7 +291,7 @@ export default function OfferView({
         <p className="-mt-1 text-2xl font-bold">Details</p>
         <div className="mt-4">
           <p className="text-base">
-            <Address address={wallet?.address!} /> will receive:
+            <Address address={offer.peer} /> will receive:
           </p>
           <div className="grid grid-flow-row gap-2 mt-2.5">
             {offeredNfts?.map((nft) => (
@@ -325,14 +325,14 @@ export default function OfferView({
       <Modal
         actions={[
           {
-            name: "Confirm",
-            type: "primary",
+            name: 'Confirm',
+            type: 'primary',
             action: () => {
-              if (!selectedReply) return;
-              handleReply(selectedReply);
+              if (!selectedReply) return
+              handleReply(selectedReply)
             },
           },
-          { name: "Cancel", type: "secondary", action: () => {} },
+          { name: 'Cancel', type: 'secondary', action: () => {} },
         ]}
         open={isReplyModalOpen}
         handleStateChange={handleReplyModal}
@@ -345,8 +345,8 @@ export default function OfferView({
         </p>
         <RadioGroup value={selectedReply} onChange={setSelectedReply}>
           <RadioGroup.Label className="sr-only">
-            {" "}
-            Reply to offer{" "}
+            {' '}
+            Reply to offer{' '}
           </RadioGroup.Label>
           <div className="pb-2 mt-5 space-y-2">
             {replies.map((reply) => (
@@ -356,12 +356,12 @@ export default function OfferView({
                 className={({ checked, active }) =>
                   classNames(
                     checked
-                      ? "border-transparent"
-                      : "border-white/10 hover:bg-firefly-800",
+                      ? 'border-transparent'
+                      : 'border-white/10 hover:bg-firefly-800',
                     active
-                      ? "border-primary ring-2 ring-primary bg-firefly-700"
-                      : "",
-                    "relative block cursor-pointer rounded-lg border bg-firefly px-6 py-4 shadow-sm focus:outline-none sm:flex sm:justify-between"
+                      ? 'border-primary ring-2 ring-primary bg-firefly-700'
+                      : '',
+                    'relative block cursor-pointer rounded-lg border bg-firefly px-6 py-4 shadow-sm focus:outline-none sm:flex sm:justify-between',
                   )
                 }
               >
@@ -391,9 +391,9 @@ export default function OfferView({
                     </RadioGroup.Description>
                     <span
                       className={classNames(
-                        active ? "border" : "border-2",
-                        checked ? "border-primary-500" : "border-transparent",
-                        "pointer-events-none absolute -inset-px rounded-lg"
+                        active ? 'border' : 'border-2',
+                        checked ? 'border-primary-500' : 'border-transparent',
+                        'pointer-events-none absolute -inset-px rounded-lg',
                       )}
                       aria-hidden="true"
                     />
@@ -407,20 +407,20 @@ export default function OfferView({
       <Modal
         actions={[
           {
-            name: "Confirm Retraction",
-            type: "primary",
+            name: 'Confirm Retraction',
+            type: 'primary',
             action: () => {
-              handleRetract();
+              handleRetract()
             },
           },
-          { name: "Cancel", type: "secondary", action: () => {} },
+          { name: 'Cancel', type: 'secondary', action: () => {} },
         ]}
         open={isRetractModalOpen}
         handleStateChange={handleRetractModal}
       >
         <p className="-mt-1 text-2xl font-bold">Retract Offer</p>
         <p className="mt-3 mb-4 text-sm text-white/75">
-          Before you retract this offer, be advised that{" "}
+          Before you retract this offer, be advised that{' '}
           <b>retracting an offer is final</b> and will remove it from the inbox
           of the user you've sent it to.
         </p>
@@ -485,13 +485,13 @@ export default function OfferView({
           <div className="flex items-center">
             {!isExpired ? (
               <p className="font-medium text-white/75">
-                Offer expires in{" "}
+                Offer expires in{' '}
                 <span className="font-semibold text-white">
                   <Countdown
                     date={new Date(parseInt(offer?.expires_at!) / 1000000)}
                     renderer={renderer}
                     onComplete={() => {
-                      setIsExpired(true);
+                      setIsExpired(true)
                     }}
                   />
                 </span>
@@ -513,12 +513,12 @@ export default function OfferView({
                   if (isExpired) {
                     return toaster.toast({
                       type: ToastTypes.Error,
-                      title: "Cannot reply to expired offer",
+                      title: 'Cannot reply to expired offer',
                       message:
-                        "This offer has expired and therefore cannot be replied to. The sender of the offer must renew it before you can reply to it.",
-                    });
+                        'This offer has expired and therefore cannot be replied to. The sender of the offer must renew it before you can reply to it.',
+                    })
                   }
-                  setIsReplyModalOpen(true);
+                  setIsReplyModalOpen(true)
                 }}
                 className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
               >
@@ -528,7 +528,7 @@ export default function OfferView({
             {isSender && (
               <button
                 onClick={() => {
-                  setIsRetractModalOpen(true);
+                  setIsRetractModalOpen(true)
                 }}
                 className="inline-flex items-center justify-center h-10 text-xs font-medium text-white rounded-lg lg:w-32 bg-primary hover:bg-primary-500"
               >
@@ -539,5 +539,5 @@ export default function OfferView({
         </div>
       </div>
     </>
-  );
+  )
 }

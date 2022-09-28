@@ -1,25 +1,25 @@
-import { Header, MediaView, LogoSpinner, Empty } from "components";
-import React, { useCallback, useState, useEffect, useMemo } from "react";
-import { useStargazeClient, useWallet } from "client";
-import copy from "copy-to-clipboard";
-import { queryInventory } from "client/query";
-import { Mod, Media, getNftMod } from "util/type";
-import { fromBech32, toUtf8 } from "@cosmjs/encoding";
-import { useRouter } from "next/router";
-import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
-import { CONTRACT_ADDRESS } from "util/constants";
-import { useTx } from "contexts/tx";
-import { ShortUrl } from "@prisma/client";
-import useToaster, { ToastTypes } from "hooks/useToaster";
-import { classNames } from "util/css";
-import { fetchNfts } from "util/nft";
+import { Header, MediaView, LogoSpinner, Empty } from 'components'
+import React, { useCallback, useState, useEffect, useMemo } from 'react'
+import { useStargazeClient, useWallet } from 'client'
+import copy from 'copy-to-clipboard'
+import { queryInventory } from 'client/query'
+import { Mod, Media, getNftMod } from 'util/type'
+import { fromBech32, toUtf8 } from '@cosmjs/encoding'
+import { useRouter } from 'next/router'
+import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
+import { CONTRACT_ADDRESS } from 'util/constants'
+import { useTx } from 'contexts/tx'
+import { ShortUrl } from '@prisma/client'
+import useToaster, { ToastTypes } from 'hooks/useToaster'
+import { classNames } from 'util/css'
+import { fetchNfts } from 'util/nft'
 
 enum SelectTarget {
   User,
   Peer,
 }
 
-type Tab = "user" | "peer";
+type Tab = 'user' | 'peer'
 
 const TabItem = ({
   id,
@@ -27,35 +27,35 @@ const TabItem = ({
   current,
   handleClick,
 }: {
-  id: Tab;
-  name: string;
-  current: boolean;
-  handleClick: (name: Tab) => void;
+  id: Tab
+  name: string
+  current: boolean
+  handleClick: (name: Tab) => void
 }) => (
   <a
     onClick={() => handleClick(id)}
     className={classNames(
-      current ? "bg-firefly-700" : "bg-firefly hover:bg-firefly-800",
-      "inline-flex py-2.5 px-2 cursor-pointer items-center justify-center w-full border rounded-md border-white/10"
+      current ? 'bg-firefly-700' : 'bg-firefly hover:bg-firefly-800',
+      'inline-flex py-2.5 px-2 cursor-pointer items-center justify-center w-full border rounded-md border-white/10',
     )}
   >
     <p className="text-base font-medium text-white">{name}</p>
   </a>
-);
+)
 
 const tabs: {
-  id: Tab;
-  name: string;
+  id: Tab
+  name: string
 }[] = [
   {
-    id: "user",
-    name: "Your Inventory",
+    id: 'user',
+    name: 'Your Inventory',
   },
   {
-    id: "peer",
-    name: "Their Inventory",
+    id: 'peer',
+    name: 'Their Inventory',
   },
-];
+]
 
 function none() {}
 const Inventory = ({
@@ -67,13 +67,13 @@ const Inventory = ({
   inputPlaceholder,
   inputOnChange,
 }: {
-  nfts: Media[];
-  handleClick: (nft: Media) => void;
-  small?: boolean;
-  isLoading: boolean;
-  input?: boolean;
-  inputPlaceholder?: string;
-  inputOnChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  nfts: Media[]
+  handleClick: (nft: Media) => void
+  small?: boolean
+  isLoading: boolean
+  input?: boolean
+  inputPlaceholder?: string
+  inputOnChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
 }) => (
   <div className="h-full p-4 overflow-y-scroll border rounded-lg border-white/10">
     {isLoading ? (
@@ -96,8 +96,8 @@ const Inventory = ({
         ) : (
           <div
             className={classNames(
-              small ? "lg:grid-cols-3 2xl:grid-cols-4" : "2xl:grid-cols-3",
-              "grid grid-cols-2 gap-2"
+              small ? 'lg:grid-cols-3 2xl:grid-cols-4' : '2xl:grid-cols-3',
+              'grid grid-cols-2 gap-2',
             )}
           >
             {nfts.map((nft) => (
@@ -113,49 +113,49 @@ const Inventory = ({
       </>
     )}
   </div>
-);
+)
 
 const Trade = () => {
-  const { wallet } = useWallet();
-  const { tx } = useTx();
-  const { client } = useStargazeClient();
+  const { wallet } = useWallet()
+  const { tx } = useTx()
+  const { client } = useStargazeClient()
 
-  const toaster = useToaster();
-  const router = useRouter();
+  const toaster = useToaster()
+  const router = useRouter()
 
-  const { peer: queryPeer, offer: queryOfferedNfts } = router.query;
+  const { peer: queryPeer, offer: queryOfferedNfts } = router.query
 
   // Querystring manipulation
   useEffect(() => {
-    if (!queryPeer) return;
+    if (!queryPeer) return
 
-    const peer = queryPeer as string;
+    const peer = queryPeer as string
 
-    if (!peer) return;
+    if (!peer) return
 
     // If the peer is the user, remove it from the querystring
-    if (peer === wallet?.address) router.push("/trade");
+    if (peer === wallet?.address) router.push('/trade')
 
     // Is it a bech32 address?
     try {
-      fromBech32(peer);
-      setPeerAddress(peer);
-      setCurrentTab("peer");
+      fromBech32(peer)
+      setPeerAddress(peer)
+      setCurrentTab('peer')
     } catch {
       // If not, maybe it's a shorturl?
-      fetch("/api/shorturl?path=" + peer)
+      fetch('/api/shorturl?path=' + peer)
         .then((res) => {
           if (!res.ok) {
             // At this point we know it can't be an address, so we remove it
-            router.push({ pathname: "/trade", query: {} });
+            router.push({ pathname: '/trade', query: {} })
           }
-          return res.json();
+          return res.json()
         })
         .then((json) => {
-          const peer = json.destination.replace("?peer=", "").split("&")[0];
+          const peer = json.destination.replace('?peer=', '').split('&')[0]
 
           // If the peer is the user, remove it from the querystring
-          if (peer === wallet?.address) router.push("/trade");
+          if (peer === wallet?.address) router.push('/trade')
 
           // save the offer if it exists, if not don't include it
           let query = queryOfferedNfts
@@ -163,16 +163,16 @@ const Trade = () => {
                 peer,
                 offer: queryOfferedNfts,
               }
-            : { peer };
+            : { peer }
 
           // If the shorturl exists, let's push it back as a bech32
           router.push({
-            pathname: "/trade",
+            pathname: '/trade',
             query,
-          });
-        });
+          })
+        })
     }
-  }, [queryPeer, wallet?.address]);
+  }, [queryPeer, wallet?.address])
 
   // Populate the selectedNfts if the `offer` querystring exists
   useEffect(() => {
@@ -182,74 +182,78 @@ const Trade = () => {
       !queryOfferedNfts ||
       !wallet?.address
     )
-      return;
-    const peer = queryPeer as string;
-    const offer = queryOfferedNfts as string;
+      return
+    const peer = queryPeer as string
+    const offer = queryOfferedNfts as string
 
-    if (!peer) return;
+    if (!peer) return
 
     // Fetch nft data & select nfts
     try {
       fetchNfts(
-        offer.split(",").map((nft) => {
-          const [collection, token_id] = nft.split("-");
-          return { collection, token_id: parseInt(token_id) };
+        offer.split(',').map((nft) => {
+          const [collection, token_id] = nft.split('-')
+          return { collection, token_id: parseInt(token_id) }
         }),
-        client
+        client,
       ).then((nfts) => {
-        if (!nfts) return router.push("/trade");
+        if (!nfts) return router.push('/trade')
         nfts.forEach((nft) => {
-          console.log(getNftMod(nft));
-          selectNft(SelectTarget.Peer, nft);
-        });
-      });
+          console.log(getNftMod(nft))
+          selectNft(SelectTarget.Peer, nft)
+        })
+      })
     } catch {
-      router.push("/trade");
+      router.push('/trade')
     }
-  }, [client?.cosmWasmClient, queryPeer, queryOfferedNfts, wallet?.address]);
+  }, [client?.cosmWasmClient, queryPeer, queryOfferedNfts, wallet?.address])
 
-  const [currentTab, setCurrentTab] = useState<Tab>("user");
+  const [currentTab, setCurrentTab] = useState<Tab>('user')
 
-  const [userNfts, setUserNfts] = useState<Media[]>();
-  const [isLoadingUserNfts, setIsLoadingUserNfts] = useState<boolean>(false);
+  const [userNfts, setUserNfts] = useState<Media[]>()
+  const [isLoadingUserNfts, setIsLoadingUserNfts] = useState<boolean>(false)
 
-  const [peerNfts, setPeerNfts] = useState<Media[]>();
-  const [isLoadingPeerNfts, setIsLoadingPeerNfts] = useState<boolean>(false);
+  const [peerNfts, setPeerNfts] = useState<Media[]>()
+  const [isLoadingPeerNfts, setIsLoadingPeerNfts] = useState<boolean>(false)
 
-  const [peerAddress, setPeerAddress] = useState<string>();
+  const [peerAddress, setPeerAddress] = useState<string>()
   useEffect(() => {
-    selectedPeerNfts.clear();
+    selectedPeerNfts.clear()
     if (peerAddress) {
-      setIsLoadingPeerNfts(true);
+      setIsLoadingPeerNfts(true)
       queryInventory(peerAddress).then((inventory) => {
-        setPeerNfts(inventory);
-        setIsLoadingPeerNfts(false);
-      });
+        setPeerNfts(inventory)
+        setIsLoadingPeerNfts(false)
+      })
     }
-  }, [peerAddress]);
+  }, [peerAddress])
 
-  const selectedUserNfts = useMemo(() => new Map<Mod, Media>(), [wallet]);
-  const [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter] =
-    useState<number>(0);
+  const selectedUserNfts = useMemo(() => new Map<Mod, Media>(), [wallet])
+  const [
+    selectedUserNftsRefreshCounter,
+    setSelectedUserNftsRefreshCounter,
+  ] = useState<number>(0)
   const refreshSelectedUserNfts = useCallback(
     () => setSelectedUserNftsRefreshCounter(selectedUserNftsRefreshCounter + 1),
-    [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
-  );
+    [selectedUserNftsRefreshCounter, setSelectedUserNftsRefreshCounter],
+  )
 
-  const selectedPeerNfts = useMemo(() => new Map<Mod, Media>(), [wallet]);
-  const [selectedPeerNftsRefreshCounter, setSelectedPeerNftsRefreshCounter] =
-    useState<number>(0);
+  const selectedPeerNfts = useMemo(() => new Map<Mod, Media>(), [wallet])
+  const [
+    selectedPeerNftsRefreshCounter,
+    setSelectedPeerNftsRefreshCounter,
+  ] = useState<number>(0)
   const refreshSelectedPeerNfts = useCallback(
     () => setSelectedPeerNftsRefreshCounter(selectedPeerNftsRefreshCounter + 1),
-    [selectedPeerNftsRefreshCounter, setSelectedUserNftsRefreshCounter]
-  );
+    [selectedPeerNftsRefreshCounter, setSelectedUserNftsRefreshCounter],
+  )
 
   const inventoryNfts = useMemo(() => {
     switch (currentTab) {
-      case "user":
-        return userNfts?.filter((nft) => !selectedUserNfts.has(getNftMod(nft)));
-      case "peer":
-        return peerNfts?.filter((nft) => !selectedPeerNfts.has(getNftMod(nft)));
+      case 'user':
+        return userNfts?.filter((nft) => !selectedUserNfts.has(getNftMod(nft)))
+      case 'peer':
+        return peerNfts?.filter((nft) => !selectedPeerNfts.has(getNftMod(nft)))
     }
   }, [
     currentTab,
@@ -259,120 +263,120 @@ const Trade = () => {
     selectedPeerNfts,
     selectedUserNftsRefreshCounter,
     selectedPeerNftsRefreshCounter,
-  ]);
+  ])
 
   const isLoadingCurrentTab = useMemo(() => {
     switch (currentTab) {
-      case "peer":
-        return isLoadingPeerNfts;
-      case "user":
-        return isLoadingUserNfts;
+      case 'peer':
+        return isLoadingPeerNfts
+      case 'user':
+        return isLoadingUserNfts
     }
-  }, [currentTab, isLoadingPeerNfts, isLoadingUserNfts]);
+  }, [currentTab, isLoadingPeerNfts, isLoadingUserNfts])
 
   const selectNft = (target: SelectTarget, nft: Media) => {
     switch (target) {
       case SelectTarget.User:
         switch (selectedUserNfts.has(getNftMod(nft))) {
           case true:
-            selectedUserNfts.delete(getNftMod(nft));
-            break;
+            selectedUserNfts.delete(getNftMod(nft))
+            break
           case false:
-            selectedUserNfts.set(getNftMod(nft), nft);
-            break;
+            selectedUserNfts.set(getNftMod(nft), nft)
+            break
         }
-        refreshSelectedUserNfts();
-        break;
+        refreshSelectedUserNfts()
+        break
       case SelectTarget.Peer:
         switch (selectedPeerNfts.has(getNftMod(nft))) {
           case true:
-            selectedPeerNfts.delete(getNftMod(nft));
-            break;
+            selectedPeerNfts.delete(getNftMod(nft))
+            break
           case false:
-            selectedPeerNfts.set(getNftMod(nft), nft);
-            break;
+            selectedPeerNfts.set(getNftMod(nft), nft)
+            break
         }
-        refreshSelectedPeerNfts();
-        break;
+        refreshSelectedPeerNfts()
+        break
     }
-  };
+  }
 
   const handleInventoryItemClick = useCallback(
     (nft: Media) => {
-      let target: SelectTarget;
+      let target: SelectTarget
 
       switch (currentTab) {
-        case "user":
-          target = SelectTarget.User;
-          break;
-        case "peer":
-          target = SelectTarget.Peer;
-          break;
+        case 'user':
+          target = SelectTarget.User
+          break
+        case 'peer':
+          target = SelectTarget.Peer
+          break
       }
 
-      if (selectedPeerNfts.has(getNftMod(nft))) target = SelectTarget.Peer;
-      if (selectedUserNfts.has(getNftMod(nft))) target = SelectTarget.User;
+      if (selectedPeerNfts.has(getNftMod(nft))) target = SelectTarget.Peer
+      if (selectedUserNfts.has(getNftMod(nft))) target = SelectTarget.User
 
-      selectNft(target, nft);
+      selectNft(target, nft)
     },
-    [currentTab, selectNft]
-  );
+    [currentTab, selectNft],
+  )
 
   useEffect(() => {
     if (wallet) {
-      setIsLoadingUserNfts(true);
+      setIsLoadingUserNfts(true)
       queryInventory(wallet?.address).then((inventory) => {
-        setUserNfts(inventory);
-        setIsLoadingUserNfts(false);
-      });
+        setUserNfts(inventory)
+        setIsLoadingUserNfts(false)
+      })
     }
-  }, [wallet]);
+  }, [wallet])
 
-  const [copiedTradeUrl, setCopiedTradeUrl] = useState<boolean>(false);
+  const [copiedTradeUrl, setCopiedTradeUrl] = useState<boolean>(false)
 
   const copyTradeUrl = useCallback(async () => {
     if (wallet) {
       // This can include a pre-selected array of nfts
       const tradePath =
-        "?" +
+        '?' +
         new URLSearchParams({
           peer: wallet?.address,
-        }).toString();
+        }).toString()
 
       // this should include the pz-l.ink/[short_url] , which will redirect to pegasus-trade.zone/link/
-      const shortUrl: ShortUrl = await fetch("/api/shorturl", {
-        method: "POST",
+      const shortUrl: ShortUrl = await fetch('/api/shorturl', {
+        method: 'POST',
         body: JSON.stringify({
           destination: tradePath,
         }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       })
         .then((res) => {
-          return res.json();
+          return res.json()
         })
         .catch((e) => {
-          console.error(e);
-        });
+          console.error(e)
+        })
 
-      copy(`${process.env.NEXT_PUBLIC_SHORT_URL!}/${shortUrl.tiny_url}`);
+      copy(`${process.env.NEXT_PUBLIC_SHORT_URL!}/${shortUrl.tiny_url}`)
 
       toaster.toast({
-        title: "Trade URL copied!",
+        title: 'Trade URL copied!',
         type: ToastTypes.Success,
         dismissable: true,
-      });
-      setCopiedTradeUrl(true);
-      setTimeout(() => setCopiedTradeUrl(false), 2000);
+      })
+      setCopiedTradeUrl(true)
+      setTimeout(() => setCopiedTradeUrl(false), 2000)
     }
-  }, [wallet, setCopiedTradeUrl, selectedUserNfts]);
+  }, [wallet, setCopiedTradeUrl, selectedUserNfts])
 
   const handleSendOffer = useCallback(async () => {
-    if (!peerAddress) return;
-    if (!peerNfts || !userNfts) return;
-    if (selectedUserNfts.size < 1) return;
-    if (selectedPeerNfts.size < 1) return;
+    if (!peerAddress) return
+    if (!peerNfts || !userNfts) return
+    if (selectedUserNfts.size < 1) return
+    if (selectedPeerNfts.size < 1) return
 
     const msg = {
       create_offer: {
@@ -383,7 +387,7 @@ const Trade = () => {
             return {
               collection: String(nft.collection.contractAddress),
               token_id: parseInt(nft.tokenId),
-            };
+            }
           }),
         wanted_nfts: peerNfts
           ?.filter((nft) => selectedPeerNfts.has(getNftMod(nft)))
@@ -391,26 +395,26 @@ const Trade = () => {
             return {
               collection: String(nft.collection.contractAddress),
               token_id: parseInt(nft.tokenId),
-            };
+            }
           }),
       },
-    };
+    }
 
     const wasmMsg = {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
       value: MsgExecuteContract.fromPartial({
         sender: wallet?.address,
         msg: toUtf8(JSON.stringify(msg)),
         contract: CONTRACT_ADDRESS,
       }),
-    };
+    }
 
     const msgs = [
       ...userNfts
         ?.filter((nft) => selectedUserNfts.has(getNftMod(nft)))
         .map((nft) => {
           return {
-            typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+            typeUrl: '/cosmwasm.wasm.v1.MsgExecuteContract',
             value: MsgExecuteContract.fromPartial({
               sender: wallet?.address,
               msg: toUtf8(
@@ -419,18 +423,18 @@ const Trade = () => {
                     spender: CONTRACT_ADDRESS,
                     token_id: String(nft.tokenId),
                   },
-                })
+                }),
               ),
               contract: String(nft.collection.contractAddress),
             }),
-          };
+          }
         }),
       wasmMsg,
-    ];
+    ]
 
-    tx(msgs, {}, () => {
-      router.push("/sent");
-    });
+    tx(msgs, { gas: 1499999 }, () => {
+      router.push('/sent')
+    })
   }, [
     wallet,
     client,
@@ -439,7 +443,7 @@ const Trade = () => {
     peerNfts,
     selectedUserNfts,
     selectedPeerNfts,
-  ]);
+  ])
 
   return (
     <main>
@@ -450,11 +454,11 @@ const Trade = () => {
             onClick={copyTradeUrl}
             className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-48 hover:bg-primary hover:border-none"
           >
-            {copiedTradeUrl ? "Copied!" : "Copy Trade URL"}
+            {copiedTradeUrl ? 'Copied!' : 'Copy Trade URL'}
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-8 mt-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 mt-3 mb-4 lg:mb-0 lg:mt-4 2xl:mt-6 lg:grid-cols-2">
         <div>
           <div className="grid grid-cols-1 gap-2 mb-4 lg:grid-cols-2">
             {tabs.map((tab) => (
@@ -470,30 +474,30 @@ const Trade = () => {
               isLoading={isLoadingCurrentTab}
               nfts={inventoryNfts || []}
               handleClick={handleInventoryItemClick}
-              input={currentTab === "peer"}
+              input={currentTab === 'peer'}
               inputPlaceholder="Enter peer address..."
               inputOnChange={(e) => {
-                const address = e.currentTarget.value;
+                const address = e.currentTarget.value
 
-                if (address === "") setPeerAddress(undefined);
+                if (address === '') setPeerAddress(undefined)
 
                 // Verify that the address is valid
                 try {
-                  fromBech32(address);
+                  fromBech32(address)
                 } catch {
-                  return;
+                  return
                 }
 
                 if (address === wallet?.address) {
                   return toaster.toast({
-                    title: "You cannot trade with yourself",
+                    title: 'You cannot trade with yourself',
                     message:
-                      "Enter an address that is not your own to view a peer inventory.",
+                      'Enter an address that is not your own to view a peer inventory.',
                     type: ToastTypes.Warning,
-                  });
+                  })
                 }
 
-                setPeerAddress(address);
+                setPeerAddress(address)
               }}
             />
           </div>
@@ -509,7 +513,7 @@ const Trade = () => {
                 isLoading={false}
                 nfts={
                   userNfts?.filter((nft) =>
-                    selectedUserNfts.has(getNftMod(nft))
+                    selectedUserNfts.has(getNftMod(nft)),
                   ) || []
                 }
                 handleClick={handleInventoryItemClick}
@@ -527,7 +531,7 @@ const Trade = () => {
                 isLoading={false}
                 nfts={
                   peerNfts?.filter((nft) =>
-                    selectedPeerNfts.has(getNftMod(nft))
+                    selectedPeerNfts.has(getNftMod(nft)),
                   ) || []
                 }
                 handleClick={handleInventoryItemClick}
@@ -537,14 +541,14 @@ const Trade = () => {
           </div>
           <button
             onClick={handleSendOffer}
-            className="inline-flex items-center justify-center px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
+            className="inline-flex items-center justify-center w-full px-16 py-4 text-sm font-medium text-white rounded-lg bg-primary hover:bg-primary-500"
           >
             Send Trade Offer
           </button>
         </div>
       </div>
     </main>
-  );
-};
+  )
+}
 
-export default Trade;
+export default Trade

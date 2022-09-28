@@ -1,39 +1,39 @@
-import { useStargazeClient, useWallet } from "client";
-import { Empty, Header, LogoSpinner } from "components";
-import OfferView from "components/Offer";
-import { useCallback, useEffect, useState } from "react";
-import { Offer } from "types/contract";
+import { useStargazeClient, useWallet } from 'client'
+import { Empty, Header, LogoSpinner } from 'components'
+import OfferView from 'components/Offer'
+import { useCallback, useEffect, useState } from 'react'
+import { Offer } from 'types/contract'
 
 const Inbox = () => {
-  const { client } = useStargazeClient();
-  const { wallet } = useWallet();
+  const { client } = useStargazeClient()
+  const { wallet } = useWallet()
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [offers, setOffers] = useState<Offer[]>();
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [offers, setOffers] = useState<Offer[]>()
 
-  const [refreshCounter, setRefreshCounter] = useState<number>(0);
+  const [refreshCounter, setRefreshCounter] = useState<number>(0)
   const refresh = useCallback(() => {
-    setRefreshCounter(refreshCounter + 1);
-  }, [refreshCounter]);
+    setRefreshCounter(refreshCounter + 1)
+  }, [refreshCounter])
 
   useEffect(() => {
     if (wallet && client?.tradeClient) {
-      setIsLoading(true);
+      setIsLoading(true)
       client?.tradeClient
         ?.offersBySender({
           sender: wallet.address,
         })
         .then((data) => {
-          setIsLoading(false);
-          setOffers(data?.offers || []);
-        });
+          setIsLoading(false)
+          setOffers(data?.offers || [])
+        })
     } else {
-      setIsLoading(false);
-      setOffers(undefined);
+      setIsLoading(false)
+      setOffers(undefined)
     }
-  }, [wallet, client?.tradeClient, refreshCounter]);
+  }, [wallet, client?.tradeClient, refreshCounter])
 
-  useEffect;
+  useEffect
   return (
     <main>
       <Header>Sent Offers</Header>
@@ -62,7 +62,7 @@ const Inbox = () => {
         </>
       )}
     </main>
-  );
-};
+  )
+}
 
-export default Inbox;
+export default Inbox
