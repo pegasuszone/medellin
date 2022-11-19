@@ -1,27 +1,29 @@
-import type { SVGProps } from "react";
-import { Fragment, useState } from "react";
-import { Transition, Menu, Dialog } from "@headlessui/react";
-import { classNames } from "util/css";
+import type { SVGProps } from 'react'
+import { Fragment, useState } from 'react'
+import { Transition, Menu, Dialog } from '@headlessui/react'
+import { classNames } from 'util/css'
 import {
   Bars3Icon as MenuIcon,
   XMarkIcon as XIcon,
-} from "@heroicons/react/24/outline";
-import Wallet from "./Wallet";
-import Link from "next/link";
+} from '@heroicons/react/24/outline'
+import Wallet from './Wallet'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 
 export interface NavigationItem {
-  name: string;
-  href: string;
-  icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
-  current: boolean;
+  name: string
+  href: string
+  icon: (props: SVGProps<SVGSVGElement>) => JSX.Element
+  current: boolean
 }
 
 export default function Navigation({
   navigation,
 }: {
-  navigation: NavigationItem[];
+  navigation: NavigationItem[]
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
   return (
     <div className="min-h-full">
       <Transition.Root show={sidebarOpen} as={Fragment}>
@@ -77,11 +79,19 @@ export default function Navigation({
                   </div>
                 </Transition.Child>
                 <div className="flex items-center flex-shrink-0 px-4">
-                  <img
-                    className="w-auto -ml-3 h-14"
-                    src="/logo_text.png"
-                    alt="Pegasus logo"
-                  />
+                  {router.asPath.includes('/trade/joe') ? (
+                    <img
+                      className="w-full h-auto px-2 pt-2"
+                      src="/joes.svg"
+                      alt="Trader Joes"
+                    />
+                  ) : (
+                    <img
+                      className="w-auto -ml-3 h-14"
+                      src="/logo_text.png"
+                      alt="Pegasus logo"
+                    />
+                  )}
                 </div>
                 <nav
                   className="flex-shrink-0 h-full mt-5 overflow-y-auto divide-y divide-white"
@@ -95,11 +105,11 @@ export default function Navigation({
                         href={item.href}
                         className={classNames(
                           item.current
-                            ? "bg-primary-600 text-white"
-                            : "text-white hover:bg-primary-700",
-                          "group flex items-center px-2 py-2 text-base font-medium rounded-md"
+                            ? 'bg-primary-600 text-white'
+                            : 'text-white hover:bg-primary-700',
+                          'group flex items-center px-2 py-2 text-base font-medium rounded-md',
                         )}
-                        aria-current={item.current ? "page" : undefined}
+                        aria-current={item.current ? 'page' : undefined}
                       >
                         <item.icon
                           className="flex-shrink-0 w-6 h-6 mr-4 text-white"
@@ -124,11 +134,19 @@ export default function Navigation({
         {/* Sidebar component, swap this element with another sidebar if you like */}
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto border-r border-white/10 bg-firefly">
           <div className="flex items-center flex-shrink-0 px-4">
-            <img
-              className="w-auto h-16"
-              src="/logo_text.png"
-              alt="Pegasus logo"
-            />
+            {router.asPath.includes('/trade/joe') ? (
+              <img
+                className="w-full h-auto px-2 py-2"
+                src="/joes.svg"
+                alt="Trader Joes"
+              />
+            ) : (
+              <img
+                className="w-auto h-16"
+                src="/logo_text.png"
+                alt="Pegasus logo"
+              />
+            )}
           </div>
           <Wallet />
           <nav
@@ -141,11 +159,11 @@ export default function Navigation({
                   <a
                     className={classNames(
                       item.current
-                        ? "bg-firefly-600 text-white"
-                        : "text-white hover:bg-firefly-700",
-                      "group flex items-center px-2 py-2 text-sm leading-6 font-medium rounded-md"
+                        ? 'bg-firefly-600 text-white'
+                        : 'text-white hover:bg-firefly-700',
+                      'group flex items-center px-2 py-2 text-sm leading-6 font-medium rounded-md',
                     )}
-                    aria-current={item.current ? "page" : undefined}
+                    aria-current={item.current ? 'page' : undefined}
                   >
                     <item.icon
                       className="flex-shrink-0 w-6 h-6 mr-4 text-white"
@@ -174,5 +192,5 @@ export default function Navigation({
         </div>
       </div>
     </div>
-  );
+  )
 }
