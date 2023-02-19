@@ -1,4 +1,5 @@
 import { CollectionInfoResponse } from "@stargazezone/types/contracts/sg721";
+import { NFT } from "client/query";
 
 export function mapObject(m: Map<any, any>): { [key: string]: any }[] {
   return Array.from(m, ([key, value]) => {
@@ -18,7 +19,7 @@ export function truncateAddress(
 }
 
 export type Mod = `${string}-${string}`;
-export function getNftMod(nft: Media): Mod {
+export function getNftMod(nft: NFT): Mod {
   return `${nft.collection.contractAddress}-${nft.tokenId}`;
 }
 

@@ -1,12 +1,17 @@
-import { useStargazeClient, useWallet } from 'client'
-import { Empty, Header, LogoSpinner } from 'components'
+'use client'
+
+import type { Offer } from 'types/Trade.types'
+import { useChain } from '@cosmos-kit/react'
+import { Empty, LogoSpinner } from 'components'
 import OfferView from 'components/Offer'
 import { useCallback, useEffect, useState } from 'react'
-import { Offer } from 'types/contract'
+import { useStargazeClient } from 'client'
 
-const Inbox = () => {
+export default function Inbox() {
+  const { isWalletConnected, address } = useChain(
+    process.env.NEXT_PUBLIC_NETWORK!,
+  )
   const { client } = useStargazeClient()
-  const { wallet } = useWallet()
 
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [offers, setOffers] = useState<Offer[]>()
@@ -17,11 +22,11 @@ const Inbox = () => {
   }, [refreshCounter])
 
   useEffect(() => {
-    if (wallet && client?.tradeClient) {
+    if (address && client?.tradeClient) {
       setIsLoading(true)
       client?.tradeClient
-        ?.offersBySender({
-          sender: wallet.address,
+        ?.offersByPeer({
+          peer: address,
         })
         .then((data) => {
           setIsLoading(false)
@@ -31,25 +36,22 @@ const Inbox = () => {
       setIsLoading(false)
       setOffers(undefined)
     }
-  }, [wallet, client?.tradeClient, refreshCounter])
+  }, [client?.tradeClient, address, refreshCounter])
 
-  useEffect
   return (
-    <main>
-      <Header>Sent Offers</Header>
-      {!wallet && (
-        <p className="text-lg font-light text-white">
-          Connect a wallet to access your outbox.
-        </p>
+    <div className="m-6 h-full p-3 border rounded-md border-white/25 md:min-h-[96vh]">
+      <p className="text-xl font-semibold text-white">Inbox</p>
+      {!isWalletConnected && (
+        <p className="text-white/50">Connect a wallet to access your inbox.</p>
       )}
       {isLoading ? (
-        <div className="flex items-center justify-center h-[90vh]">
+        <div className="flex items-center justify-center">
           <LogoSpinner />
         </div>
       ) : (
         <>
           {(offers?.length || 0) < 1 ? (
-            <div className="flex items-center justify-center h-[90vh]">
+            <div className="flex items-center justify-center h-full md:mt-[35vh]">
               <Empty />
             </div>
           ) : (
@@ -61,8 +63,6 @@ const Inbox = () => {
           )}
         </>
       )}
-    </main>
+    </div>
   )
 }
-
-export default Inbox

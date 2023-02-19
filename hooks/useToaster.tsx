@@ -1,53 +1,53 @@
-import React, { SVGProps } from "react";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import React, { SVGProps } from 'react'
+import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import {
   XMarkIcon as XIcon,
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
-} from "@heroicons/react/24/solid";
-import toast, { Toaster, ToastOptions } from "react-hot-toast";
-import { Spinner } from "components";
-import { classNames } from "util/css";
+} from '@heroicons/react/24/solid'
+import toast, { Toaster, ToastOptions } from 'react-hot-toast'
+import { Spinner } from 'components'
+import { classNames } from 'util/css'
 
-export const ToasterContainer = Toaster;
+export const ToasterContainer = Toaster
 
 export enum ToastTypes {
-  Success = "success",
-  Error = "error",
-  Pending = "pending",
-  Warning = "warning",
+  Success = 'success',
+  Error = 'error',
+  Pending = 'pending',
+  Warning = 'warning',
 }
 
 export interface ToastPayload {
-  actions?: JSX.Element;
-  message?: string | JSX.Element;
-  title: string;
-  type: ToastTypes;
-  dismissable?: boolean;
+  actions?: JSX.Element
+  message?: string | JSX.Element
+  title: string
+  type: ToastTypes
+  dismissable?: boolean
 }
 
 function customToast(
   { actions, title, type, message, dismissable }: ToastPayload,
-  options?: ToastOptions
+  options?: ToastOptions,
 ): any {
-  let Icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
+  let Icon: (props: SVGProps<SVGSVGElement>) => JSX.Element
 
   switch (type) {
     case ToastTypes.Success: {
-      Icon = CheckCircleIcon;
-      break;
+      Icon = CheckCircleIcon
+      break
     }
     case ToastTypes.Error: {
-      Icon = ExclamationCircleIcon;
-      break;
+      Icon = ExclamationCircleIcon
+      break
     }
     case ToastTypes.Pending: {
-      Icon = Spinner;
-      break;
+      Icon = Spinner
+      break
     }
     case ToastTypes.Warning: {
-      Icon = ExclamationTriangleIcon;
-      break;
+      Icon = ExclamationTriangleIcon
+      break
     }
   }
 
@@ -55,13 +55,13 @@ function customToast(
     (t) => (
       <div
         onLoad={() => {
-          setTimeout(() => toast.dismiss(t.id), 3000);
+          setTimeout(() => toast.dismiss(t.id), 3000)
         }}
         onClick={dismissable ? () => toast.dismiss(t.id) : () => {}}
         className={classNames(
-          t.visible ? "animate-enter" : "animate-leave",
-          dismissable ? "cursor-pointer" : "",
-          "group w-full max-w-sm bg-firefly border border-white/10 shadow-lg rounded-lg pointer-events-auto p-4"
+          t.visible ? 'animate-enter' : 'animate-leave',
+          dismissable ? 'cursor-pointer' : '',
+          'group w-full max-w-sm bg-bg-lighter border border-white/10 shadow-lg rounded-lg pointer-events-auto p-4',
         )}
       >
         <div className="flex items-start">
@@ -87,28 +87,28 @@ function customToast(
         </div>
       </div>
     ),
-    options
-  );
+    options,
+  )
 }
 
 interface CustomToast {
-  dismiss: typeof toast.dismiss;
-  toast: typeof customToast;
-  error: (msg: string) => void;
+  dismiss: typeof toast.dismiss
+  toast: typeof customToast
+  error: (msg: string) => void
 }
 
 export default function useToaster(): CustomToast {
   function error(msg: string) {
     customToast({
       type: ToastTypes.Error,
-      title: "Error",
+      title: 'Error',
       message: msg,
-    });
+    })
   }
 
   return {
     dismiss: toast.dismiss,
     toast: customToast,
     error,
-  };
+  }
 }

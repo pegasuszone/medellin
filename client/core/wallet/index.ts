@@ -1,7 +1,7 @@
-import { Coin } from "@cosmjs/amino";
+import { Coin } from '@cosmjs/amino'
 
 export interface WalletData {
-  readonly address: string;
-  readonly name?: string;
-  readonly balance?: Coin;
+  readonly address: string
+  readonly name?: string
+  readonly balance?: Coin
 }

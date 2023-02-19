@@ -1,24 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { StargazeClient } from "client/core";
-import StargazeContext from "./StargazeContext";
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { StargazeClient } from 'client/core'
+import StargazeContext from './StargazeContext'
 
-import {
-  CONTRACT_ADDRESS,
-  CONTRACT_CODEID,
-  SG721_CODEID,
-} from "util/constants";
-import chainInfo from "client/ChainInfo";
-import useWallet from "../wallet/useWallet";
+import { CONTRACT_ADDRESS, CONTRACT_CODEID, SG721_CODEID } from 'util/constants'
+import chainInfo from 'client/ChainInfo'
+import useWallet from '../wallet/useWallet'
 
 export default function StargazeProvider({
   children,
 }: {
-  children: JSX.Element;
+  children: JSX.Element
 }) {
-  const [, updateState] = useState<{}>();
-  const forceUpdate = useCallback(() => updateState({}), []);
+  const [, updateState] = useState<{}>()
+  const forceUpdate = useCallback(() => updateState({}), [])
 
-  const { wallet, signingCosmWasmClient } = useWallet();
+  const { wallet, signingCosmWasmClient } = useWallet()
 
   const client = useMemo(
     () =>
@@ -30,36 +26,27 @@ export default function StargazeProvider({
         signingCosmWasmClient: signingCosmWasmClient || null,
         sg721CodeId: SG721_CODEID,
       }),
-    [wallet, signingCosmWasmClient]
-  );
-
-  const connectSigning = useCallback(async () => {
-    if (client) {
-      await client?.connectSigning();
-      forceUpdate();
-    }
-  }, [client, forceUpdate]);
+    [wallet, signingCosmWasmClient],
+  )
 
   // Connect client
   useEffect(() => {
     // Unsigned Client
     async function connectClient() {
-      await client?.connect();
-      console.log("CONNECT", client);
-      forceUpdate();
+      await client?.connect()
+      forceUpdate()
     }
 
-    connectClient();
-  }, [client, forceUpdate]);
+    connectClient()
+  }, [client, forceUpdate])
 
   return (
     <StargazeContext.Provider
       value={{
         client,
-        connectSigning,
       }}
     >
       {children}
     </StargazeContext.Provider>
-  );
+  )
 }

@@ -1,22 +1,23 @@
 import { useStargazeClient, useWallet } from 'client'
 import dynamic from 'next/dynamic'
 import React, { useEffect, useState, useCallback, SVGProps } from 'react'
-import { Offer } from 'types/contract'
+import type { Offer } from 'types/Trade.types'
 import { fetchNfts, getNFTLink } from 'util/nft'
 import { getNftMod, Media } from 'util/type'
 import Address from './Address'
-import ReactTooltip from '@huner2/react-tooltip'
 import { Modal } from './Modal'
-import { VerticalMediaView } from './MediaView'
+import { MintImage, VerticalMediaView } from './MediaView'
 import { classNames } from 'util/css'
 import { RadioGroup } from '@headlessui/react'
 import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
 import { toUtf8 } from '@cosmjs/encoding'
 import { CONTRACT_ADDRESS } from 'util/constants'
 import { useTx } from 'contexts/tx'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import useToaster, { ToastTypes } from 'hooks/useToaster'
+import { NFT } from 'client/query'
+import { useNameService } from '@cosmos-kit/react'
 
 const Countdown = dynamic(() => import('react-countdown'))
 
@@ -50,7 +51,7 @@ const replies = [
   // },
 ]
 
-const OfferNft = ({ nft }: { nft: Media }) => {
+const OfferNft = ({ nft }: { nft: NFT }) => {
   return (
     <a
       rel="noopener noreferrer"
@@ -61,18 +62,20 @@ const OfferNft = ({ nft }: { nft: Media }) => {
       })}
       className="flex-shrink-0"
     >
-      <ReactTooltip
+      {/* <ReactTooltip
         effect="solid"
         type="info"
         className="tooltip"
         arrowColor="rgba(0,0,0,0)"
-      />
-      <img
-        src={nft.image}
+      /> */}
+      {/* <img
+        src={nft.media.image.jpgLink}
         key={getNftMod(nft)}
-        className="object-cover w-24 h-24 rounded-md cursor-pointer hover:shadow-xl"
         data-tip={nft.name}
-      />
+      /> */}
+      <div className="object-cover w-16 h-16 rounded-md cursor-pointer hover:shadow-xl">
+        <MintImage src={nft.media.image.jpgLink} alt={nft.name} />
+      </div>
     </a>
   )
 }
@@ -89,13 +92,18 @@ export default function OfferView({
   const isSender = offer.sender === wallet?.address
   const isPeer = offer.peer === wallet?.address
 
-  const router = useRouter()
-
   const { tx } = useTx()
   const toaster = useToaster()
+  const { data: nameservice } = useNameService('stargaze')
 
-  const [offeredNfts, setOfferedNfts] = useState<Media[]>()
-  const [wantedNfts, setWantedNfts] = useState<Media[]>()
+  const [peerAddress, setPeerAddress] = useState<string>(offer.peer)
+
+  useEffect(() => {
+    nameservice?.resolveName(offer.peer).then((res) => setPeerAddress(res))
+  }, [offer.peer])
+
+  const [offeredNfts, setOfferedNfts] = useState<NFT[]>()
+  const [wantedNfts, setWantedNfts] = useState<NFT[]>()
 
   const [isLoading, setIsLoading] = useState<boolean>()
 
@@ -122,11 +130,11 @@ export default function OfferView({
   // Fetch wanted & offered nfts
   useEffect(() => {
     if (wallet && client) {
-      fetchNfts(offer.offered_nfts, client).then((nfts) => {
+      fetchNfts(offer.offered_nfts).then((nfts) => {
         if (!nfts) return
         setOfferedNfts(nfts)
       })
-      fetchNfts(offer.wanted_nfts, client).then((nfts) => {
+      fetchNfts(offer.wanted_nfts).then((nfts) => {
         if (!nfts) return
         setWantedNfts(nfts)
       })
@@ -291,7 +299,7 @@ export default function OfferView({
         <p className="-mt-1 text-2xl font-bold">Details</p>
         <div className="mt-4">
           <p className="text-base">
-            <Address address={offer.peer} /> will receive:
+            <Address address={peerAddress} /> will receive:
           </p>
           <div className="grid grid-flow-row gap-2 mt-2.5">
             {offeredNfts?.map((nft) => (
@@ -429,7 +437,7 @@ export default function OfferView({
         {/* Desktop address view */}
         <div className="hidden grid-cols-2 gap-12 xl:grid">
           <Address address={offer.sender} copy={isPeer} />
-          <Address address={offer.peer} copy={isSender} />
+          <Address address={peerAddress} copy={isSender} />
         </div>
         {/* Desktop NFT view */}
         <div className="hidden grid-cols-2 gap-12 mt-4 xl:grid">
@@ -438,7 +446,7 @@ export default function OfferView({
               <OfferNft nft={nft} />
             ))}
             {(offeredNfts?.length || 0) > 1 && (
-              <div className="flex items-center justify-center flex-shrink-0 w-24 h-24 text-sm border rounded-md text-white/50 border-white/10">
+              <div className="flex items-center justify-center flex-shrink-0 w-16 h-16 text-sm border rounded-md text-white/50 border-white/10">
                 +{offeredNfts!.length - 1}
               </div>
             )}
@@ -448,7 +456,7 @@ export default function OfferView({
               <OfferNft nft={nft} />
             ))}
             {(wantedNfts?.length || 0) > 1 && (
-              <div className="flex items-center justify-center flex-shrink-0 w-24 h-24 text-sm border rounded-md text-white/50 border-white/10">
+              <div className="flex items-center justify-center flex-shrink-0 w-16 h-16 text-sm border rounded-md text-white/50 border-white/10">
                 +{wantedNfts!.length - 1}
               </div>
             )}
@@ -469,7 +477,7 @@ export default function OfferView({
           </div>
         </div>
         <div className="mt-4 lg:hidden">
-          <Address address={offer.peer} copy={isSender} />
+          <Address address={peerAddress} copy={isSender} />
           <div className="flex flex-row mt-2 space-x-2">
             {wantedNfts?.slice(0, 1).map((nft) => (
               <OfferNft nft={nft} />
@@ -503,7 +511,7 @@ export default function OfferView({
           <div className="flex flex-col mt-4 space-y-2 lg:mt-0 lg:space-x-4 lg:space-y-0 lg:flex-row lg:justify-end lg:items-center">
             <button
               onClick={() => setIsDetailsModalOpen(true)}
-              className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-32 hover:bg-primary hover:border-none"
+              className="inline-flex items-center justify-center h-10 text-xs font-medium text-white border border-white rounded-lg lg:w-32 hover:bg-primary/50 hover:border-none"
             >
               Details
             </button>

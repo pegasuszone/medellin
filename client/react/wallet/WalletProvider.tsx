@@ -1,34 +1,48 @@
-import chainInfo from "client/ChainInfo";
-import { WalletManagerProvider } from "@cosmos-wallet/react";
-import { WalletProvider as WalletContextProvider } from "./WalletContext";
-import StargazeProvider from "client/react/client/StargazeProvider";
-import { ChainInfos } from "config";
+import type { SignerOptions } from '@cosmos-kit/core'
+import { GasPrice, SigningCosmWasmClientOptions } from 'cosmwasm'
+import { WalletProvider as WalletContextProvider } from './WalletContext'
+import StargazeProvider from 'client/react/client/StargazeProvider'
+import { ChainProvider } from '@cosmos-kit/react'
+import { chains, assets } from 'chain-registry'
 
-// WalletProvider serves multiple purposes:
-// - It provides `useWalletManager()` to the wallet context (WalletContext.tsx)
-// - It wraps WalletManagerProvider and WalletContext into one simple component you can insert in the root
-// - It provides the app access to StargazeClient
+import { wallets as KeplrWallet } from '@cosmos-kit/keplr'
+import { wallets as CosmostationWallet } from '@cosmos-kit/cosmostation'
+import { wallets as LeapWallet } from '@cosmos-kit/leap'
+
+const signerOptions: SignerOptions = {
+  signingCosmwasm: ({
+    chain_name,
+  }): SigningCosmWasmClientOptions | undefined => {
+    let gasTokenName: string | undefined
+    switch (chain_name) {
+      case 'stargaze':
+      case 'stargazetestnet':
+        gasTokenName = 'ustargaze'
+        break
+    }
+    // @ts-ignore messed up dependencies
+    return gasTokenName
+      ? { gasPrice: GasPrice.fromString(`0.0025${gasTokenName}`) }
+      : undefined
+  },
+}
 
 export default function WalletProvider({
   children,
 }: {
-  children: JSX.Element;
+  children: JSX.Element
 }) {
   return (
-    <WalletManagerProvider
-      defaultChainId={chainInfo.chainId}
-      walletConnectClientMeta={{
-        name: "Stargaze",
-        description:
-          "Buy and sell goods and services on the world's foremost crypto goods exchange",
-        url: "https://www.stargazeprotocol.zone",
-        icons: ["https://i.ibb.co/YWKKR5Y/logo.png"],
-      }}
-      chainInfoOverrides={ChainInfos}
+    <ChainProvider
+      signerOptions={signerOptions}
+      chains={chains}
+      assetLists={assets}
+      wallets={[...KeplrWallet, ...CosmostationWallet, ...LeapWallet]}
+      defaultNameService="stargaze"
     >
       <WalletContextProvider>
         <StargazeProvider>{children}</StargazeProvider>
       </WalletContextProvider>
-    </WalletManagerProvider>
-  );
+    </ChainProvider>
+  )
 }
