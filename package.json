@@ -22,7 +22,7 @@
     "@apollo/client": "^3.7.5",
     "@chakra-ui/react": "^2.4.9",
     "@cosmjs/encoding": "^0.28.13",
-    "@cosmos-kit/core": "^1.0.9",
+    "@cosmos-kit/core": "^1.0.8",
     "@cosmos-kit/cosmostation": "^0.14.25",
     "@cosmos-kit/keplr": "^0.32.25",
     "@cosmos-kit/leap": "^0.13.25",
