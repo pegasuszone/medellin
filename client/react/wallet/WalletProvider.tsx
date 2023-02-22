@@ -8,6 +8,7 @@ import { chains, assets } from 'chain-registry'
 import { wallets as KeplrWallet } from '@cosmos-kit/keplr'
 import { wallets as CosmostationWallet } from '@cosmos-kit/cosmostation'
 import { wallets as LeapWallet } from '@cosmos-kit/leap'
+import { wallets as OmniWallet } from '@cosmos-kit/omni'
 
 const signerOptions: SignerOptions = {
   signingCosmwasm: ({
@@ -37,7 +38,12 @@ export default function WalletProvider({
       signerOptions={signerOptions}
       chains={chains}
       assetLists={assets}
-      wallets={[...KeplrWallet, ...CosmostationWallet, ...LeapWallet]}
+      wallets={[
+        ...KeplrWallet,
+        ...CosmostationWallet,
+        ...OmniWallet,
+        ...LeapWallet,
+      ]}
       defaultNameService="stargaze"
     >
       <WalletContextProvider>
