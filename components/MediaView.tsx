@@ -164,6 +164,7 @@ export default function MediaView({
   selected: boolean
   small?: boolean
 }) {
+  console.log(nft)
   return (
     <a
       onClick={onClick}
@@ -175,7 +176,7 @@ export default function MediaView({
       )}
     >
       {/* <img src={nft.media.image.jpgLink} className={'rounded-md aspect-1'} /> */}
-      <MintImage src={nft.media.image.jpgLink} alt={nft.name} />
+      {nft.media && <MintImage src={nft.media.image.jpgLink} alt={nft.name} />}
       <div className="mt-2.5">
         <p
           className={classNames(

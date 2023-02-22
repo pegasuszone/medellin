@@ -66,7 +66,7 @@ function customToast(
       >
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <Icon className="w-6 h-6" aria-hidden="true" />
+            <Icon className="w-6 h-6 text-white" aria-hidden="true" />
           </div>
 
           <div className="ml-3 w-0 flex-1 pt-0.5">

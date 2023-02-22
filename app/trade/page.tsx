@@ -24,14 +24,14 @@ export default function Trade() {
   const peerSearchParam = useSearchParams().get('peer')
 
   useEffect(() => {
-    if (peerSearchParam) {
+    if (address && peerSearchParam) {
       setPeerDataInput(peerSearchParam)
       handleSetPeer(
         { preventDefault: () => {} } as React.FormEvent,
         peerSearchParam,
       )
     }
-  }, [peerSearchParam])
+  }, [peerSearchParam, address])
 
   const [nfts, setNfts] = useState<NFT[]>()
   const [selectedCollection, setSelectedCollection] = useState<string>()
@@ -232,7 +232,7 @@ export default function Trade() {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 p-1 col-span-2 md:grid-cols-3 md:max-h-[66vh] overflow-y-scroll gap-2">
+                <div className="grid grid-cols-2 p-1 col-span-2 md:grid-cols-3 md:max-h-[60vh] overflow-y-scroll gap-2">
                   {[
                     ...(nfts?.filter((nft) =>
                       selectedPeerNfts.has(getNftMod(nft)),
