@@ -262,7 +262,7 @@ export default function Trade() {
                   </a>
                 )}
               </div>
-              <div className="flex flex-col md:max-h-[66vh] overflow-y-scroll space-y-2 mt-1.5">
+              <div className="flex flex-col md:max-h-[55vh] overflow-y-scroll space-y-2 mt-1.5">
                 {nftCollections().map((collection) => (
                   <a
                     key={collection.contractAddress}

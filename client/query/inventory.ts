@@ -4,8 +4,8 @@ import { client, NFT } from '.'
 export const getInventory = async (address: string) => {
   const { data } = await client.query({
     query: gql`
-      query Inventory($owner: String) {
-        tokens(owner: $owner) {
+      query Inventory($limit: Int, $owner: String) {
+        tokens(owner: $owner, limit: $limit) {
           tokens {
             tokenId
             name
@@ -22,7 +22,7 @@ export const getInventory = async (address: string) => {
         }
       }
     `,
-    variables: { owner: address },
+    variables: { owner: address, limit: 1000 },
   })
 
   return data.tokens.tokens as NFT[]
